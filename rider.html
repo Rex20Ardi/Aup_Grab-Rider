@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rider Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      padding: 20px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      margin: 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    .rider-session {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      border-left: 4px solid #6c757d;
+    }
+    .rider-id {
+      font-family: monospace;
+      font-weight: bold;
+      color: #495057;
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-left: 5px;
+    }
+    .rider-controls {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      border-left: 4px solid #007bff;
+    }
+    input, button { 
+      margin-right: 10px; 
+      padding: 12px; 
+      border-radius: 8px;
+      border: 2px solid #e1e1e1;
+      font-size: 16px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+    button {
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    .assign-btn { 
+      background: linear-gradient(135deg, #007bff, #0056b3); 
+      color: white; 
+    }
+    .refresh-btn {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+    }
+    .take-btn {
+      background: linear-gradient(135deg, #17a2b8, #138496);
+      color: white;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    .my-orders-btn {
+      background: linear-gradient(135deg, #6f42c1, #5a32a3);
+      color: white;
+    }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 20px; 
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    th { 
+      background: linear-gradient(135deg, #343a40, #495057);
+      color: white;
+      padding: 15px 8px;
+      text-align: left;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    td { 
+      border-bottom: 1px solid #e9ecef; 
+      padding: 12px 8px; 
+      vertical-align: top;
+      font-size: 13px;
+    }
+    tr:hover {
+      background-color: #f8f9fa;
+    }
+    .status-message {
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-weight: bold;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .order-row.assigned {
+      background-color: #e7f3ff;
+      border-left: 4px solid #007bff;
+    }
+    .order-row.completed {
+      background-color: #e8f5e8;
+      border-left: 4px solid #28a745;
+      opacity: 0.7;
+    }
+    .order-row.my-order {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+    }
+    .rider-info {
+      font-weight: bold;
+      color: #007bff;
+    }
+    .my-rider {
+      color: #28a745;
+      font-weight: bold;
+    }
+    .order-id {
+      font-family: monospace;
+      font-weight: bold;
+      color: #495057;
+      background: #e9ecef;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+    .payment-status {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .paid {
+      background: #d4edda;
+      color: #155724;
+    }
+    .not-paid {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #17a2b8, #138496);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      flex: 1;
+      margin: 0 10px;
+    }
+    .stat-number {
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .rider-name-required {
+      background: #fff3cd;
+      color: #856404;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      border: 1px solid #ffeaa7;
+    }
+    .view-toggle {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .toggle-btn {
+      background: #6c757d;
+      color: white;
+      padding: 10px 20px;
+      margin: 0 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .toggle-btn.active {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+    }
+    .my-orders-section {
+      margin-top: 30px;
+      padding: 20px;
+      background: #fff3cd;
+      border-radius: 10px;
+      border-left: 4px solid #ffc107;
+    }
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      table {
+        font-size: 12px;
+      }
+      th, td {
+        padding: 6px 4px;
+      }
+      .stats {
+        flex-direction: column;
+      }
+      .stat-card {
+        margin: 5px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🚴‍♂️ Rider Dashboard</h2>
+    
+    <div class="rider-session">
+      <strong>👤 Your Rider Session:</strong>
+      <span class="rider-id" id="riderSessionId"></span>
+      <div style="font-size: 12px; color: #666; margin-top: 5px;">
+        This ID helps track your assignments separately from other riders
+      </div>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number" id="totalOrders">0</div>
+        <div class="stat-label">Total Orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="availableOrders">0</div>
+        <div class="stat-label">Available Orders</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="myAssignments">0</div>
+        <div class="stat-label">My Assignments</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="completedOrders">0</div>
+        <div class="stat-label">Completed Orders</div>
+      </div>
+    </div>
+
+    <div class="rider-controls">
+      <h3>🎯 Rider Information</h3>
+      <div class="rider-name-required" id="riderWarning">
+        ⚠️ Please enter your name and phone number before accepting orders
+      </div>
+      <input type="text" id="riderName" placeholder="Your Name" required />
+      <input type="tel" id="riderPhone" placeholder="Your Phone Number" required />
+      <button class="assign-btn" onclick="assignSelf()">🚀 Accept Next Available Order</button>
+      <button class="refresh-btn" onclick="loadOrders()">🔄 Refresh Orders</button>
+      <button class="my-orders-btn" onclick="toggleMyOrders()">📋 Toggle My Orders</button>
+    </div>
+
+    <div id="assignStatus"></div>
+
+    <div class="view-toggle">
+      <button class="toggle-btn active" onclick="showAllOrders()">🌐 All Orders</button>
+      <button class="toggle-btn" onclick="showAvailableOnly()">🆓 Available Only</button>
+      <button class="toggle-btn" onclick="showMyOrdersOnly()">👤 My Orders Only</button>
+    </div>
+
+    <table id="ordersTable">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Phone</th>
+          <th>Pickup Location</th>
+          <th>Item</th>
+          <th>Dropoff Location</th>
+          <th>Payment</th>
+          <th>Notes</th>
+          <th>Rider</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <div class="my-orders-section" id="myOrdersSection" style="display: none;">
+      <h3>📋 My Current Assignments</h3>
+      <div id="myOrdersList">
+        <div style="text-align: center; color: #666; font-style: italic;">
+          No assignments yet. Accept orders from the table above!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzQpc4ewpTsQv4aRcTk3-30nDnQvzp4Q3xXqHbmgzsBXjFjoXE6GFtij4rpn-bIE4sU1Q/exec';
+    let currentRiderName = '';
+    let currentRiderPhone = '';
+    let riderSessionId = null;
+    let allOrders = [];
+    let currentView = 'all'; // 'all', 'available', 'mine'
+
+    // Initialize rider session
+    window.onload = function() {
+      initializeRiderSession();
+      loadOrders();
+      
+      // Update rider info when fields change
+      document.getElementById('riderName').addEventListener('input', updateRiderInfo);
+      document.getElementById('riderPhone').addEventListener('input', updateRiderInfo);
+    };
+
+    function initializeRiderSession() {
+      riderSessionId = localStorage.getItem('riderSessionId');
+      if (!riderSessionId) {
+        riderSessionId = generateRiderSessionId();
+        localStorage.setItem('riderSessionId', riderSessionId);
+      }
+      document.getElementById('riderSessionId').textContent = riderSessionId;
+      
+      // Load saved rider info
+      const savedName = localStorage.getItem('riderName');
+      const savedPhone = localStorage.getItem('riderPhone');
+      if (savedName) {
+        document.getElementById('riderName').value = savedName;
+        currentRiderName = savedName;
+      }
+      if (savedPhone) {
+        document.getElementById('riderPhone').value = savedPhone;
+        currentRiderPhone = savedPhone;
+      }
+      
+      updateRiderWarning();
+    }
+
+    function generateRiderSessionId() {
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 10000);
+      return `RIDER-${timestamp}-${random}`;
+    }
+
+    function updateRiderInfo() {
+      currentRiderName = document.getElementById('riderName').value.trim();
+      currentRiderPhone = document.getElementById('riderPhone').value.trim();
+      
+      // Save to localStorage
+      localStorage.setItem('riderName', currentRiderName);
+      localStorage.setItem('riderPhone', currentRiderPhone);
+      
+      updateRiderWarning();
+    }
+
+    function updateRiderWarning() {
+      const warning = document.getElementById('riderWarning');
+      if (currentRiderName && currentRiderPhone) {
+        warning.style.display = 'none';
+      } else {
+        warning.style.display = 'block';
+      }
+    }
+
+    async function loadOrders() {
+      try {
+        const res = await fetch(scriptURL + '?action=getAllOrders');
+        const data = await res.json();
+        allOrders = data;
+        
+        displayOrders();
+        updateStats();
+
+      } catch (error) {
+        console.error('Error loading orders:', error);
+        showMessage('Error loading orders. Please try again.', 'error');
+      }
+    }
+
+    function displayOrders() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      let ordersToShow = allOrders;
+      
+      // Filter based on current view
+      if (currentView === 'available') {
+        ordersToShow = allOrders.filter(order => !order["Rider Name"] && order["Status"] !== "Completed");
+      } else if (currentView === 'mine') {
+        ordersToShow = allOrders.filter(order => order["Rider Name"] === currentRiderName);
+      }
+
+      ordersToShow.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        tr.className = 'order-row';
+        
+        const isAssigned = row["Rider Name"];
+        const isMyOrder = row["Rider Name"] === currentRiderName;
+        const isCompleted = row["Status"] === "Completed";
+        
+        if (isCompleted) {
+          tr.classList.add('completed');
+        } else if (isMyOrder) {
+          tr.classList.add('my-order');
+        } else if (isAssigned) {
+          tr.classList.add('assigned');
+        }
+
+        const paymentClass = row["Payment Status"] === "Paid" ? "paid" : "not-paid";
+        const orderId = row["Order ID"] || `Legacy-${index}`;
+        
+        tr.innerHTML = `
+          <td><span class="order-id">${orderId}</span></td>
+          <td><strong>${row["Customer Name"]}</strong></td>
+          <td>${row["Phone Number"]}</td>
+          <td>📍 ${row.Pickup}</td>
+          <td>🍽️ ${row.Item}</td>
+          <td>📍 ${row.Dropoff}</td>
+          <td><span class="payment-status ${paymentClass}">${row["Payment Status"]}</span></td>
+          <td>${row.Notes || '-'}</td>
+          <td class="${isMyOrder ? 'my-rider' : 'rider-info'}">${row["Rider Name"] || 'Unassigned'}</td>
+          <td>${getStatusBadge(row)}</td>
+          <td>${getActionButtons(row, index)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateStats() {
+      const totalOrders = allOrders.length;
+      const availableOrders = allOrders.filter(order => !order["Rider Name"] && order["Status"] !== "Completed").length;
+      const myAssignments = allOrders.filter(order => order["Rider Name"] === currentRiderName && order["Status"] !== "Completed").length;
+      const completedOrders = allOrders.filter(order => order["Status"] === "Completed").length;
+
+      document.getElementById('totalOrders').textContent = totalOrders;
+      document.getElementById('availableOrders').textContent = availableOrders;
+      document.getElementById('myAssignments').textContent = myAssignments;
+      document.getElementById('completedOrders').textContent = completedOrders;
+    }
+
+    function getStatusBadge(order) {
+      if (order["Status"] === "Completed") {
+        return '<span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">✅ Completed</span>';
+      } else if (order["Rider Name"]) {
+        const isMyOrder = order["Rider Name"] === currentRiderName;
+        const bgColor = isMyOrder ? '#ffc107' : '#007bff';
+        const textColor = isMyOrder ? '#212529' : 'white';
+        const icon = isMyOrder ? '👤' : '🚴‍♂️';
+        return `<span style="background: ${bgColor}; color: ${textColor}; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${icon} Assigned</span>`;
+      } else {
+        return '<span style="background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">⏳ Available</span>';
+      }
+    }
+
+    function getActionButtons(order, index) {
+      if (order["Status"] === "Completed") {
+        return '<span style="color: #28a745; font-weight: bold;">✅ Finished</span>';
+      } else if (!order["Rider Name"]) {
+        return `<button class="take-btn" onclick="assignToOrder('${order["Order ID"]}')">🎯 Take This</button>`;
+      } else if (order["Rider Name"] === currentRiderName) {
+        return '<span style="color: #ffc107; font-weight: bold;">👤 Your Order</span>';
+      } else {
+        return `<span style="color: #6c757d; font-size: 11px;">${order["Rider Name"]}</span>`;
+      }
+    }
+
+    async function assignSelf() {
+      if (!currentRiderName || !currentRiderPhone) {
+        showMessage("⚠️ Please enter your name and phone number before accepting orders.", 'warning');
+        return;
+      }
+
+      try {
+        const res = await fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'assignRider',
+            riderName: currentRiderName,
+            riderPhone: currentRiderPhone,
+            riderSessionId: riderSessionId
+          })
+        });
+
+        const result = await res.json();
+        
+        if (result.result === 'rider_assigned') {
+          showMessage(`✅ Successfully assigned to order ${result.orderId} for ${result.customer}!`, 'success');
+          loadOrders();
+        } else if (result.result === 'no_pending_orders') {
+          showMessage("ℹ️ No available orders to assign.", 'warning');
+        } else {
+          showMessage("❌ Assignment failed. Please try again.", 'error');
+        }
+      } catch (error) {
+        console.error('Error assigning rider:', error);
+        showMessage("❌ Network error. Please try again.", 'error');
+      }
+    }
+
+    async function assignToOrder(orderId) {
+      if (!currentRiderName || !currentRiderPhone) {
+        showMessage("⚠️ Please enter your name and phone number first.", 'warning');
+        return;
+      }
+
+      if (!orderId || orderId.startsWith('Legacy-')) {
+        showMessage("❌ Cannot assign to order without valid ID. Please refresh and try again.", 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'assignSpecificOrder',
+            riderName: currentRiderName,
+            riderPhone: currentRiderPhone,
+            riderSessionId: riderSessionId,
+            orderId: orderId
+          })
+        });
+
+        const result = await res.json();
+        
+        if (result.result === 'success') {
+          showMessage(`✅ Successfully assigned to order ${orderId}!`, 'success');
+          loadOrders();
+        } else if (result.result === 'order_not_available') {
+          showMessage("❌ This order is no longer available. It may have been taken by another rider.", 'error');
+          loadOrders();
+        } else {
+          showMessage("❌ Assignment failed. Please try again.", 'error');
+          loadOrders();
+        }
+      } catch (error) {
+        console.error('Error assigning to specific order:', error);
+        showMessage("❌ Network error. Please try again.", 'error');
+      }
+    }
+
+    function showAllOrders() {
+      currentView = 'all';
+      updateToggleButtons();
+      displayOrders();
+    }
+
+    function showAvailableOnly() {
+      currentView = 'available';
+      updateToggleButtons();
+      displayOrders();
+    }
+
+    function showMyOrdersOnly() {
+      currentView = 'mine';
+      updateToggleButtons();
+      displayOrders();
+    }
+
+    function updateToggleButtons() {
+      document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.remove('active'));
+      
+      if (currentView === 'all') {
+        document.querySelector('.toggle-btn:nth-child(1)').classList.add('active');
+      } else if (currentView === 'available') {
+        document.querySelector('.toggle-btn:nth-child(2)').classList.add('active');
+      } else if (currentView === 'mine') {
+        document.querySelector('.toggle-btn:nth-child(3)').classList.add('active');
+      }
+    }
+
+    function toggleMyOrders() {
+      const section = document.getElementById('myOrdersSection');
+      if (section.style.display === 'none') {
+        section.style.display = 'block';
+        loadMyOrdersDetails();
+      } else {
+        section.style.display = 'none';
+      }
+    }
+
+    function loadMyOrdersDetails() {
+      const myOrders = allOrders.filter(order => order["Rider Name"] === currentRiderName);
+      const myOrdersList = document.getElementById('myOrdersList');
+      
+      if (myOrders.length === 0) {
+        myOrdersList.innerHTML = `
+          <div style="text-align: center; color: #666; font-style: italic;">
+            No assignments yet. Accept orders from the table above!
+          </div>
+        `;
+        return;
+      }
+      
+      myOrdersList.innerHTML = '';
+      
+      myOrders.forEach(order => {
+        const orderCard = document.createElement('div');
+        orderCard.style.cssText = `
+          background: white; 
+          padding: 15px; 
+          border-radius: 8px; 
+          margin-bottom: 15px; 
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+          border-left: 4px solid ${order["Status"] === "Completed" ? "#28a745" : "#ffc107"};
+        `;
+        
+        orderCard.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <span style="font-family: monospace; font-size: 12px; background: #e9ecef; padding: 2px 6px; border-radius: 4px;">${order["Order ID"]}</span>
+            <span style="font-size: 12px; padding: 4px 8px; border-radius: 4px; font-weight: bold; background: ${order["Status"] === "Completed" ? "#d4edda; color: #155724" : "#fff3cd; color: #856404"};">
+              ${order["Status"] === "Completed" ? "✅ Completed" : "🚴‍♂️ In Progress"}
+            </span>
+          </div>
+          <div style="font-size: 14px; color: #666; margin-bottom: 10px;">
+            <strong>👤 Customer:</strong> ${order["Customer Name"]} (${order["Phone Number"]})<br>
+            <strong>📍 From:</strong> ${order.Pickup} → <strong>📍 To:</strong> ${order.Dropoff}<br>
+            <strong>🍽️ Item:</strong> ${order.Item}<br>
+            <strong>💳 Payment:</strong> ${order["Payment Status"]}
+          </div>
+          ${order["Status"] !== "Completed" ? 
+            '<div style="color: #007bff; font-weight: bold; font-size: 14px;">📞 Contact customer to coordinate pickup and delivery</div>' : 
+            '<div style="color: #28a745; font-weight: bold; font-size: 14px;">🎉 Order completed successfully!</div>'
+          }
+        `;
+        
+        myOrdersList.appendChild(orderCard);
+      });
+    }
+
+    function showMessage(message, type) {
+      const assignStatus = document.getElementById('assignStatus');
+      assignStatus.innerHTML = `<div class="status-message ${type}">${message}</div>`;
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        assignStatus.innerHTML = '';
+      }, 5000);
+    }
+
+    // Auto-refresh every 30 seconds
+    setInterval(loadOrders, 30000);
+  </script>
+</body>
+</html>
+
