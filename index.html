@@ -346,6 +346,26 @@
       font-size: 16px;
     }
     
+    /* NEW: Quantity display styling */
+    .quantity-info {
+      background: #e8f5e8;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+      border-left: 3px solid #4a7c59;
+    }
+    
+    .quantity-badge {
+      display: inline-block;
+      background: #4a7c59;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    
     .payment-info {
       display: inline-block;
       padding: 6px 10px;
@@ -723,38 +743,37 @@
 
     async function loadOrders() {
       try {
-        const res = await fetch(scriptURL + '?action=getAllOrders');
-        const data = await res.json();
-        allOrders = data;
+        const response = await fetch(scriptURL);
+        const orders = await response.json();
         
-        displayOrders();
+        allOrders = orders;
         updateStats();
-
+        displayOrders();
       } catch (error) {
         console.error('Error loading orders:', error);
-        showMessage('Error loading orders. Please try again.', 'error');
+        showMessage("Error loading orders. Please try again.", 'error');
       }
     }
 
     function displayOrders() {
       const ordersList = document.getElementById('ordersList');
-      ordersList.innerHTML = '';
-
-      let ordersToShow = allOrders;
       
-      // Filter based on current view
+      let filteredOrders = allOrders;
+      
       if (currentView === 'available') {
-        ordersToShow = allOrders.filter(order => !order["Rider Name"] && order["Status"] !== "Completed");
+        filteredOrders = allOrders.filter(order => !order["Rider Name"] && order["Status"] !== "Completed");
       } else if (currentView === 'mine') {
-        ordersToShow = allOrders.filter(order => order["Rider Name"] === currentRiderName);
+        filteredOrders = allOrders.filter(order => order["Rider Name"] === currentRiderName);
       }
-
-      if (ordersToShow.length === 0) {
-        ordersList.innerHTML = '<div class="empty-state">No orders to display</div>';
+      
+      if (filteredOrders.length === 0) {
+        ordersList.innerHTML = '<div class="empty-state">No orders found for the current filter.</div>';
         return;
       }
-
-      ordersToShow.forEach((order, index) => {
+      
+      ordersList.innerHTML = '';
+      
+      filteredOrders.forEach((order, index) => {
         const orderCard = createOrderCard(order, index);
         ordersList.appendChild(orderCard);
       });
@@ -762,42 +781,30 @@
 
     function createOrderCard(order, index) {
       const card = document.createElement('div');
-      card.className = 'order-card';
       
-      const isAssigned = order["Rider Name"];
-      const isMyOrder = order["Rider Name"] === currentRiderName;
-      const isCompleted = order["Status"] === "Completed";
-      
-      if (isCompleted) {
-        card.classList.add('completed');
-      } else if (isMyOrder) {
-        card.classList.add('my-order');
-      } else if (isAssigned) {
-        card.classList.add('assigned');
-      } else {
-        card.classList.add('available');
-      }
-
-      const orderId = order["Order ID"] || `Legacy-${index}`;
-      const customerName = order["Customer Name"] || 'Unknown Customer';
-      const customerPhone = order["Phone Number"] || 'No phone';
-      const pickup = order["Pickup"] || order["Pickup Location"] || 'Not specified';
-      const dropoff = order["Dropoff"] || order["Dropoff Location"] || 'Not specified';
-      const item = order["Item"] || 'Not specified';
-      const paymentStatus = order["Payment Status"] || 'Not specified';
-      const paymentCost = order["Payment Cost"] || '';
-      const riderName = order["Rider Name"] || 'Unassigned';
+      const orderId = order["Order ID"] || '';
+      const customer = order["Customer Name"] || '';
+      const phone = order["Phone Number"] || '';
+      const pickup = order["Pickup"] || '';
+      const item = order["Item"] || '';
+      const quantity = order["Quantity"] || '1'; // NEW: Get quantity
+      const dropoff = order["Dropoff"] || '';
+      const paymentStatus = order["Payment Status"] || '';
       const notes = order["Notes"] || '';
       
+      const statusClass = getStatusClass(order);
+      const statusText = getStatusText(order);
+      
+      card.className = `order-card ${statusClass.replace('status-', '')}`;
       card.innerHTML = `
         <div class="order-header">
           <span class="order-id">${orderId}</span>
-          <span class="order-status ${getStatusClass(order)}">${getStatusText(order)}</span>
+          <span class="order-status ${statusClass}">${statusText}</span>
         </div>
         
         <div class="customer-info">
-          <div class="customer-name">${customerName}</div>
-          <div class="customer-phone">${customerPhone}</div>
+          <div class="customer-name">${customer}</div>
+          <div class="customer-phone">📞 ${phone}</div>
         </div>
         
         <div class="route-info">
@@ -808,12 +815,15 @@
           <div class="route-item">
             <span class="route-icon">🍽️</span>
             <strong>Item:</strong> ${item}
+            <span class="quantity-badge">Qty: ${quantity}</span>
           </div>
           <div class="route-item">
             <span class="route-icon">📍</span>
             <strong>To:</strong> ${dropoff}
           </div>
         </div>
+        
+        ${getQuantityInfo(quantity)}
         
         <div class="payment-info ${paymentStatus === 'Paid' ? 'payment-paid' : 'payment-unpaid'}">
           Payment: ${paymentStatus}
@@ -831,6 +841,19 @@
       `;
       
       return card;
+    }
+
+    // NEW: Function to display quantity information
+    function getQuantityInfo(quantity) {
+      const qty = parseInt(quantity) || 1;
+      if (qty > 1) {
+        return `
+          <div class="quantity-info">
+            <strong>📦 Multiple Items:</strong> ${qty} items to pick up
+          </div>
+        `;
+      }
+      return '';
     }
 
     function getPaymentCostAlert(order) {
@@ -899,25 +922,28 @@
         showMessage("Please enter your name and phone number before accepting orders.", 'warning');
         return;
       }
-
+      
       try {
-        const res = await fetch(scriptURL, {
+        const response = await fetch(scriptURL, {
           method: 'POST',
           body: JSON.stringify({
             action: 'assignRider',
             riderName: currentRiderName,
             riderPhone: currentRiderPhone,
             riderSessionId: riderSessionId
-          })
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
-
-        const result = await res.json();
+        
+        const result = await response.json();
         
         if (result.result === 'rider_assigned') {
           showMessage(`Successfully assigned to order ${result.orderId} for ${result.customer}!`, 'success');
           loadOrders();
         } else if (result.result === 'no_pending_orders') {
-          showMessage("No available orders to assign.", 'warning');
+          showMessage("No pending orders available at the moment.", 'warning');
         } else {
           showMessage("Assignment failed. Please try again.", 'error');
         }
@@ -929,25 +955,23 @@
 
     async function assignToOrder(orderId) {
       if (!currentRiderName || !currentRiderPhone) {
-        showMessage("Please enter your name and phone number first.", 'warning');
+        showMessage("Please enter your name and phone number before accepting orders.", 'warning');
         return;
       }
-
-      if (!orderId || orderId.startsWith('Legacy-')) {
-        showMessage("Cannot assign to order without valid ID. Please refresh and try again.", 'error');
-        return;
-      }
-
+      
       try {
         const res = await fetch(scriptURL, {
           method: 'POST',
           body: JSON.stringify({
             action: 'assignSpecificOrder',
+            orderId: orderId,
             riderName: currentRiderName,
             riderPhone: currentRiderPhone,
-            riderSessionId: riderSessionId,
-            orderId: orderId
-          })
+            riderSessionId: riderSessionId
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
 
         const result = await res.json();
