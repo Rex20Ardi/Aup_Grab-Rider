@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rider Dashboard - Aup Grab</title>
+  <link rel="stylesheet" href="info-modal.css">
   <style>
     * {
       box-sizing: border-box;
@@ -436,12 +437,14 @@
       width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.5);
-      display: flex;
+      /* keep hidden by default; visibility controlled via .show */
+      display: none;
       align-items: center;
       justify-content: center;
       z-index: 2000;
       animation: fadeIn 0.3s ease-out;
     }
+    .modal-overlay.show { display: flex; }
     
     @keyframes fadeIn {
       from {
@@ -750,6 +753,9 @@
     let riderSessionId = null;
     let refreshInterval = null;
     let allOrders = [];
+    let isTypingMessage = false;
+    const draftMessages = {}; // orderId -> draft text
+    const sendingMessage = {}; // orderId -> boolean (in-flight lock)
     
     // Initialize dashboard
     window.onload = function() {
@@ -867,6 +873,8 @@
       }
       
       container.innerHTML = myOrders.map(order => createOrderCard(order, false)).join('');
+      // Reattach input listeners and restore drafts
+      attachMessageInputHandlers();
     }
     
     function createOrderCard(order, isAvailable) {
@@ -890,7 +898,17 @@
           </button>
         `;
       }
-      
+
+      // Add call button for assigned (active) orders
+      let callBtn = '';
+      if (!isAvailable && order.status === 'assigned' && order.customer_phone) {
+        callBtn = `
+          <a class="btn btn-accept" style="background:linear-gradient(135deg,#fbbf24,#f59e42);" href="tel:${order.customer_phone}">
+            📞 Call Customer
+          </a>
+        `;
+      }
+
       return `
         <div class="order-card ${order.status}">
           <div class="order-header">
@@ -967,6 +985,7 @@
           
           <div class="order-actions">
             ${actionButtons}
+            ${callBtn}
             <button class="btn btn-view" onclick="viewOrderDetails('${order.order_id}')">
               View Details
             </button>
@@ -975,14 +994,42 @@
             <div style="margin-top:12px; padding-top:12px; border-top:1px solid #e5e7eb;">
               <div style="font-weight:600; color:#1e3c72; margin-bottom:6px;">Send message to customer</div>
               <div style="display:flex; gap:8px;">
-                <input id="messageInput-${order.order_id}" type="text" placeholder="Type a message..." style="flex:1; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px;" />
-                <button class="btn btn-accept" onclick="sendMessage('${order.order_id}')">Send</button>
+                <input id="messageInput-${order.order_id}" type="text" placeholder="Type a message..." style="flex:1; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px;" value="${(draftMessages[order.order_id] || '').replace(/"/g, '&quot;')}" />
+                <button id="messageSendBtn-${order.order_id}" class="btn btn-accept" onclick="sendMessage('${order.order_id}')">Send</button>
               </div>
               <div id="messageInfo-${order.order_id}" style="font-size:12px; color:#6b7280; margin-top:6px;"></div>
             </div>
           ` : ''}
         </div>
       `;
+    }
+
+    function attachMessageInputHandlers() {
+      const inputs = document.querySelectorAll('input[id^="messageInput-"]');
+      inputs.forEach(inp => {
+        const oid = inp.id.replace('messageInput-', '');
+        // Restore from draft store in case value attr was escaped
+        if (typeof draftMessages[oid] === 'string' && inp.value !== draftMessages[oid]) {
+          inp.value = draftMessages[oid];
+        }
+        inp.addEventListener('input', () => {
+          draftMessages[oid] = inp.value;
+        });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage(oid);
+          }
+        });
+        inp.addEventListener('focus', () => {
+          isTypingMessage = true;
+          if (refreshInterval) clearInterval(refreshInterval);
+        });
+        inp.addEventListener('blur', () => {
+          isTypingMessage = false;
+          startAutoRefresh();
+        });
+      });
     }
     
     function acceptOrder(orderId) {
@@ -993,12 +1040,16 @@
     function sendMessage(orderId) {
       const input = document.getElementById(`messageInput-${orderId}`);
       const info = document.getElementById(`messageInfo-${orderId}`);
+      const btn = document.getElementById(`messageSendBtn-${orderId}`);
       if (!input) return;
+      if (sendingMessage[orderId]) return; // prevent duplicate in-flight
       const text = (input.value || '').trim();
       if (!text) {
         if (info) info.textContent = 'Please type a message first.';
         return;
       }
+      sendingMessage[orderId] = true;
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
       const payload = {
         action: 'send_message',
         order_id: orderId,
@@ -1016,6 +1067,7 @@
       .then(data => {
         if (data.success) {
           input.value = '';
+          draftMessages[orderId] = '';
           if (info) info.textContent = 'Message sent.';
           showNotification('Message sent');
         } else {
@@ -1028,12 +1080,16 @@
         console.error('sendMessage error', err);
         if (info) info.textContent = 'Network error sending message';
         showNotification('Network error sending message', 'error');
+      })
+      .finally(() => {
+        sendingMessage[orderId] = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Send'; }
       });
     }
     
     function showRiderInfoModal(orderId) {
       const modal = document.createElement('div');
-      modal.className = 'modal-overlay';
+      modal.className = 'modal-overlay show';
       modal.innerHTML = `
         <div class="modal-content">
           <div class="modal-header">
@@ -1251,8 +1307,9 @@
     function startAutoRefresh() {
       // Refresh every 8 seconds to receive bookings faster
       if (refreshInterval) clearInterval(refreshInterval);
+      if (isTypingMessage) return; // don't refresh while typing
       refreshInterval = setInterval(() => {
-        loadDashboard();
+        if (!isTypingMessage) loadDashboard();
       }, 8000);
     }
     
@@ -1272,20 +1329,8 @@
         clearInterval(refreshInterval);
       }
     });
-    // Info modal handlers
-    function openInfo() {
-      const m = document.getElementById('infoModal');
-      if (m) m.style.display = 'flex';
-      document.addEventListener('keydown', escCloseInfo);
-    }
-    function closeInfo() {
-      const m = document.getElementById('infoModal');
-      if (m) m.style.display = 'none';
-      document.removeEventListener('keydown', escCloseInfo);
-    }
-    function escCloseInfo(e) { if (e.key === 'Escape') closeInfo(); }
-    function overlayClick(e) { if (e.target && e.target.id === 'infoModal') closeInfo(); }
   </script>
+  <script src="info-modal.js"></script>
 </body>
 </html>
 
