@@ -144,6 +144,64 @@
       margin-top: 30px;
     }
     
+    /* Orders Tabs */
+    .orders-tabs {
+      display: flex;
+      gap: 10px;
+      margin: 30px 0 20px 0;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .tab-button {
+      background: #f3f4f6;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px 8px 0 0;
+      font-weight: 600;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-bottom: 3px solid transparent;
+    }
+    
+    .tab-button:hover {
+      background: #e5e7eb;
+      color: #374151;
+    }
+    
+    .tab-button.active {
+      background: #3b82f6;
+      color: white;
+      border-bottom: 3px solid #1e3c72;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Checkbox styles */
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .checkbox-container input {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      cursor: pointer;
+    }
+    
+    .checkmark {
+      margin-left: 5px;
+    }
+    
     .orders-grid {
       display: grid;
       gap: 20px;
@@ -673,20 +731,74 @@
         </div>
       </div>
       
-      <!-- Available Orders Section -->
-      <div class="orders-section">
+      <!-- Orders Navigation Tabs -->
+      <div class="orders-tabs">
+        <button class="tab-button active" onclick="switchTab('available', event)">Available Orders</button>
+        <button class="tab-button" onclick="switchTab('active', event)">Active Orders</button>
+        <button class="tab-button" onclick="switchTab('completed', event)">Completed Today</button>
+      </div>
+      
+      <!-- Tab Content Containers -->
+      <div class="tab-content active" id="availableTab">
+        <!-- Available Orders Section -->
+        <div class="orders-section">
+          <h2 class="section-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12,6 12,12 16,14"/>
+            </svg>
+            Available Orders
+          </h2>
+          <div class="orders-grid" id="availableOrders">
+            <div class="loading">
+              <div class="loading-spinner"></div>
+              <div>Loading available orders...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="tab-content" id="activeTab">
+        <!-- Active Orders Section -->
+        <div class="orders-section">
+          <h2 class="section-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="m22 2-5 10-5-5 10-5z"/>
+            </svg>
+            Active Orders
+          </h2>
+          <div class="orders-grid" id="activeOrders">
+            <div class="loading">
+              <div class="loading-spinner"></div>
+              <div>Loading your active orders...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="tab-content" id="completedTab">
+        <!-- Completed Today Section -->
+        <div class="orders-section">
         <h2 class="section-title">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
-            <polyline points="12,6 12,12 16,14"/>
+            <polyline points="16,8 12,12 8,16"/>
+            <polyline points="16,16 12,12 8,8"/>
           </svg>
-          Available Orders
+          Completed Today
         </h2>
-        <div class="orders-grid" id="availableOrders">
+        <div class="orders-grid" id="completedTodayOrders">
           <div class="loading">
             <div class="loading-spinner"></div>
-            <div>Loading available orders...</div>
+            <div>Loading your completed orders...</div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <!-- Info Modal -->
   <div id="infoModal" class="modal-overlay" onclick="overlayClick(event)">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
@@ -708,28 +820,6 @@
           <li><strong>Phone number shown to user?</strong> The number you provide when accepting will be shown to the customer.</li>
           <li><strong>Auto-refresh?</strong> The dashboard refreshes periodically; use the floating refresh button anytime.</li>
         </ul>
-      </div>
-    </div>
-  </div>
-        </div>
-      </div>
-      
-      <!-- My Orders Section -->
-      <div class="orders-section">
-        <h2 class="section-title">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="m22 2-5 10-5-5 10-5z"/>
-          </svg>
-          My Orders
-        </h2>
-        <div class="orders-grid" id="myOrders">
-          <div class="loading">
-            <div class="loading-spinner"></div>
-            <div>Loading your orders...</div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -798,7 +888,8 @@
             allOrders = data.bookings;
             updateStatistics();
             displayAvailableOrders();
-            displayMyOrders();
+            displayActiveOrders();
+            displayCompletedTodayOrders();
           } else {
             showNotification('Error loading orders: ' + data.message, 'error');
           }
@@ -811,9 +902,9 @@
     
     function updateStatistics() {
       const pendingOrders = allOrders.filter(order => order.status === 'pending');
-      const myOrders = allOrders.filter(order => order.rider_id === riderSessionId);
-      const completedToday = myOrders.filter(order => {
-        if (order.status === 'completed' && order.completed_at) {
+      const activeOrders = allOrders.filter(order => order.rider_id === riderSessionId && order.status === 'assigned');
+      const completedToday = allOrders.filter(order => {
+        if (order.rider_id === riderSessionId && order.status === 'completed' && order.completed_at) {
           const completedDate = new Date(order.completed_at);
           const today = new Date();
           return completedDate.toDateString() === today.toDateString();
@@ -822,7 +913,7 @@
       });
       
       document.getElementById('pendingCount').textContent = pendingOrders.length;
-      document.getElementById('assignedCount').textContent = myOrders.filter(order => order.status === 'assigned').length;
+      document.getElementById('assignedCount').textContent = activeOrders.length;
       document.getElementById('completedCount').textContent = completedToday.length;
     }
     
@@ -850,14 +941,14 @@
       container.innerHTML = availableOrders.map(order => createOrderCard(order, true)).join('');
     }
     
-    function displayMyOrders() {
-      const myOrders = allOrders
-        .filter(order => order.rider_id === riderSessionId)
+    function displayActiveOrders() {
+      const activeOrders = allOrders
+        .filter(order => order.rider_id === riderSessionId && order.status === 'assigned')
         // Latest accepted at top; fallback to created_at
         .sort((a, b) => (new Date(b.assigned_at || b.created_at || 0)) - (new Date(a.assigned_at || a.created_at || 0)));
-      const container = document.getElementById('myOrders');
+      const container = document.getElementById('activeOrders');
       
-      if (myOrders.length === 0) {
+      if (activeOrders.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -872,9 +963,41 @@
         return;
       }
       
-      container.innerHTML = myOrders.map(order => createOrderCard(order, false)).join('');
+      container.innerHTML = activeOrders.map(order => createOrderCard(order, false)).join('');
       // Reattach input listeners and restore drafts
       attachMessageInputHandlers();
+    }
+    
+    function displayCompletedTodayOrders() {
+      const completedTodayOrders = allOrders
+        .filter(order => {
+          if (order.rider_id === riderSessionId && order.status === 'completed' && order.completed_at) {
+            const completedDate = new Date(order.completed_at);
+            const today = new Date();
+            return completedDate.toDateString() === today.toDateString();
+          }
+          return false;
+        })
+        // Latest completed first
+        .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
+      const container = document.getElementById('completedTodayOrders');
+      
+      if (completedTodayOrders.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="16,8 12,12 8,16"/>
+              <polyline points="16,16 12,12 8,8"/>
+            </svg>
+            <h3>No Completed Orders Today</h3>
+            <p>You haven't completed any orders today yet.</p>
+          </div>
+        `;
+        return;
+      }
+      
+      container.innerHTML = completedTodayOrders.map(order => createOrderCard(order, false)).join('');
     }
     
     function createOrderCard(order, isAvailable) {
@@ -909,8 +1032,23 @@
         `;
       }
 
+      // Add checkbox for active orders
+      let pickupCheckbox = '';
+      if (!isAvailable && order.status === 'assigned') {
+        pickupCheckbox = `
+          <div style="position: absolute; top: 15px; right: 15px;">
+            <label class="checkbox-container">
+              <input type="checkbox" id="pickup-${order.order_id}" onchange="togglePickupStatus('${order.order_id}')">
+              <span class="checkmark"></span>
+              <span style="margin-left: 5px; font-size: 14px;">Picked Up</span>
+            </label>
+          </div>
+        `;
+      }
+
       return `
-        <div class="order-card ${order.status}">
+        <div class="order-card ${order.status}" style="position: relative;">
+          ${pickupCheckbox}
           <div class="order-header">
             <div>
               <div class="order-id">${order.order_id}</div>
@@ -1323,6 +1461,39 @@
       }, 3000);
     }
     
+    function togglePickupStatus(orderId) {
+      const checkbox = document.getElementById(`pickup-${orderId}`);
+      if (checkbox.checked) {
+        // Optionally add visual feedback or store the status
+        console.log(`Order ${orderId} marked as picked up`);
+      } else {
+        // Optionally add visual feedback or store the status
+        console.log(`Order ${orderId} pickup status removed`);
+      }
+    }
+    
+    function switchTab(tabName, event) {
+      // Hide all tab content
+      const tabContents = document.querySelectorAll('.tab-content');
+      tabContents.forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // Remove active class from all buttons
+      const tabButtons = document.querySelectorAll('.tab-button');
+      tabButtons.forEach(button => {
+        button.classList.remove('active');
+      });
+      
+      // Show the selected tab content
+      document.getElementById(tabName + 'Tab').classList.add('active');
+      
+      // Add active class to the clicked button
+      if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      }
+    }
+    
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
       if (refreshInterval) {
@@ -1333,4 +1504,3 @@
   <script src="info-modal.js"></script>
 </body>
 </html>
-
