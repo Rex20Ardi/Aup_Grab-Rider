@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rider Dashboard - Aup Grab</title>
   <link rel="stylesheet" href="info-modal.css">
+  <link rel="stylesheet" href="notifications.css">
+  <script src="notification-service.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -743,6 +745,19 @@
       }
     }
     
+    /* Mobile styles for tabs */
+    .orders-tabs {
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    
+    .tab-button {
+      padding: 10px 15px;
+      font-size: 0.85rem;
+      flex: 1;
+      min-width: auto;
+    }
+    
     /* Additional mobile improvements for smaller screens */
     @media (max-width: 480px) {
       .order-header-content {
@@ -924,8 +939,10 @@
     let refreshInterval = null;
     let allOrders = [];
     let isTypingMessage = false;
+    let lastNotificationCheck = Date.now(); // Track last notification check time
     const draftMessages = {}; // orderId -> draft text
     const sendingMessage = {}; // orderId -> boolean (in-flight lock)
+    const pickedUpOrders = new Set(JSON.parse(localStorage.getItem('pickedUpOrders')) || []); // Persist picked up orders
     
     // Initialize dashboard
     window.onload = function() {
@@ -1115,10 +1132,11 @@
       // Add checkbox for active orders
       let pickupCheckbox = '';
       if (!isAvailable && order.status === 'assigned') {
+        const isChecked = pickedUpOrders.has(order.order_id) ? 'checked' : '';
         pickupCheckbox = `
           <div class="pickup-checkbox-container">
             <label class="checkbox-container">
-              <input type="checkbox" id="pickup-${order.order_id}" onchange="togglePickupStatus('${order.order_id}')">
+              <input type="checkbox" id="pickup-${order.order_id}" onchange="togglePickupStatus('${order.order_id}')" ${isChecked}>
               <span class="checkmark"></span>
               <span style="margin-left: 5px; font-size: 14px;">Picked Up</span>
             </label>
@@ -1529,7 +1547,23 @@
       if (refreshInterval) clearInterval(refreshInterval);
       if (isTypingMessage) return; // don't refresh while typing
       refreshInterval = setInterval(() => {
-        if (!isTypingMessage) loadDashboard();
+        if (!isTypingMessage) {
+          // Load dashboard data
+          loadDashboard();
+          
+          // Check for new bookings and show notifications
+          RiderNotificationService.pollRiderNotifications(SCRIPT_URL, lastNotificationCheck)
+            .then(newBookings => {
+              if (newBookings.length > 0) {
+                RiderNotificationService.showRiderNotifications(newBookings);
+              }
+              // Update last notification check time
+              lastNotificationCheck = Date.now();
+            })
+            .catch(error => {
+              console.error('Error checking for notifications:', error);
+            });
+        }
       }, 8000);
     }
     
@@ -1546,10 +1580,14 @@
     function togglePickupStatus(orderId) {
       const checkbox = document.getElementById(`pickup-${orderId}`);
       if (checkbox.checked) {
-        // Optionally add visual feedback or store the status
+        // Add to picked up orders and save to localStorage
+        pickedUpOrders.add(orderId);
+        localStorage.setItem('pickedUpOrders', JSON.stringify([...pickedUpOrders]));
         console.log(`Order ${orderId} marked as picked up`);
       } else {
-        // Optionally add visual feedback or store the status
+        // Remove from picked up orders and save to localStorage
+        pickedUpOrders.delete(orderId);
+        localStorage.setItem('pickedUpOrders', JSON.stringify([...pickedUpOrders]));
         console.log(`Order ${orderId} pickup status removed`);
       }
     }
