@@ -202,6 +202,54 @@
       margin-left: 5px;
     }
     
+    /* Order card header adjustments */
+    .order-header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+    }
+    
+    .order-info {
+      flex: 1;
+    }
+    
+    .pickup-checkbox-container {
+      margin-left: 15px;
+      flex-shrink: 0;
+    }
+    
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+      .order-card {
+        padding: 15px;
+        margin-bottom: 15px;
+      }
+      
+      .order-header-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .pickup-checkbox-container {
+        margin-left: 0;
+        margin-top: 10px;
+        align-self: flex-start;
+      }
+      
+      .order-id {
+        font-size: 16px;
+      }
+      
+      .order-details {
+        padding: 10px;
+      }
+      
+      .customer-info, .restaurant-info {
+        padding: 8px;
+      }
+    }
+    
     .orders-grid {
       display: grid;
       gap: 20px;
@@ -694,6 +742,38 @@
         height: 50px;
       }
     }
+    
+    /* Additional mobile improvements for smaller screens */
+    @media (max-width: 480px) {
+      .order-header-content {
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .pickup-checkbox-container {
+        margin-top: 10px;
+        align-self: flex-start;
+      }
+      
+      .detail-row {
+        flex-direction: column;
+        gap: 5px;
+      }
+      
+      .detail-label {
+        min-width: auto;
+        font-weight: bold;
+      }
+      
+      .order-actions {
+        gap: 8px;
+      }
+      
+      .btn {
+        padding: 12px 16px;
+        font-size: 16px; /* Larger touch targets */
+      }
+    }
   </style>
 </head>
 <body>
@@ -1036,7 +1116,7 @@
       let pickupCheckbox = '';
       if (!isAvailable && order.status === 'assigned') {
         pickupCheckbox = `
-          <div style="position: absolute; top: 15px; right: 15px;">
+          <div class="pickup-checkbox-container">
             <label class="checkbox-container">
               <input type="checkbox" id="pickup-${order.order_id}" onchange="togglePickupStatus('${order.order_id}')">
               <span class="checkmark"></span>
@@ -1047,15 +1127,17 @@
       }
 
       return `
-        <div class="order-card ${order.status}" style="position: relative;">
-          ${pickupCheckbox}
+        <div class="order-card ${order.status}">
           <div class="order-header">
-            <div>
-              <div class="order-id">${order.order_id}</div>
-              <div style="margin-top: 5px;">
-                <span class="order-type ${order.booking_type}">${order.booking_type}</span>
-                <span class="order-status ${order.status}">${order.status}</span>
+            <div class="order-header-content">
+              <div class="order-info">
+                <div class="order-id">${order.order_id}</div>
+                <div style="margin-top: 5px;">
+                  <span class="order-type ${order.booking_type}">${order.booking_type}</span>
+                  <span class="order-status ${order.status}">${order.status}</span>
+                </div>
               </div>
+              ${pickupCheckbox}
             </div>
           </div>
           
