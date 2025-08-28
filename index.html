@@ -805,6 +805,18 @@
         <div style="font-size: 12px; margin-top: 5px; opacity: 0.8;">
           Your unique rider identifier
         </div>
+        <div style="margin-top: 10px;">
+          <label for="riderNameInput" style="font-size: 14px; font-weight: bold;">Name:</label>
+          <input type="text" id="riderNameInput" placeholder="Enter your name"
+            onchange="updateRiderInfo('name', this.value)"
+            style="width: 100%; margin-top: 5px; padding: 8px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
+        <div style="margin-top: 10px;">
+          <label for="riderPhoneInput" style="font-size: 14px; font-weight: bold;">Phone:</label>
+          <input type="tel" id="riderPhoneInput" placeholder="Enter your phone number"
+            onchange="updateRiderInfo('phone', this.value)"
+            style="width: 100%; margin-top: 5px; padding: 8px; border: 1px solid #ccc; border-radius: 5px;">
+        </div>
       </div>
     </div>
     
@@ -932,8 +944,23 @@
   <div class="notification" id="notification"></div>
   
   <script>
+    // Fallback if notification-service.js failed to load
+    if (typeof RiderNotificationService === 'undefined') {
+      console.warn('RiderNotificationService not loaded, creating fallback');
+      window.RiderNotificationService = {
+        pollRiderNotifications: function(url, since) {
+          return Promise.resolve([]);
+        },
+        showRiderNotifications: function(notifications) {
+          // Do nothing
+        }
+      };
+    }
+  </script>
+
+  <script>
     // REPLACE WITH YOUR GOOGLE APP SCRIPT URL
-    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzv69YVjiAxzYteFo7tl4LGVecznj35_kRYY4_Eca3IPmAnOouSQgTIwTqdXESQOrEP2A/exec';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBOyI8Jo61xnbVHFmPB3SgvaT9g0iUtIU3T1cP5O9JZbvawZ1c3HyZrJrH6dfn035N4A/exec';
     
     let riderSessionId = null;
     let refreshInterval = null;
@@ -942,19 +969,68 @@
     let lastNotificationCheck = Date.now(); // Track last notification check time
     const draftMessages = {}; // orderId -> draft text
     const sendingMessage = {}; // orderId -> boolean (in-flight lock)
-    const pickedUpOrders = new Set(JSON.parse(localStorage.getItem('pickedUpOrders')) || []); // Persist picked up orders
+    
+    // Make sure we initialize pickedUpOrders safely
+    const pickedUpOrders = new Set();
+    try {
+      const savedPickedUp = localStorage.getItem('pickedUpOrders');
+      if (savedPickedUp) {
+        JSON.parse(savedPickedUp).forEach(id => pickedUpOrders.add(id));
+      }
+    } catch (e) {
+      console.warn('Error loading picked up orders', e);
+    }
+    
+    // Initialize rider info safely
+    let riderInfo = {
+      name: '',
+      phone: ''
+    };
+    try {
+      riderInfo.name = localStorage.getItem('riderName') || '';
+      riderInfo.phone = localStorage.getItem('riderPhone') || '';
+    } catch (e) {
+      console.warn('Error loading rider info', e);
+    }
+    
+    // Initialize claimed orders safely
+    let claimedOrders = [];
+    try {
+      const savedClaimedOrders = localStorage.getItem('claimedOrders');
+      if (savedClaimedOrders) {
+        claimedOrders = JSON.parse(savedClaimedOrders);
+      }
+    } catch (e) {
+      console.warn('Error loading claimed orders', e);
+      localStorage.setItem('claimedOrders', JSON.stringify([]));
+    }
     
     // Initialize dashboard
     window.onload = function() {
-      initializeRiderSession();
-      loadDashboard();
-      startAutoRefresh();
-      // Refresh faster when rider returns to the tab or regains network
-      window.addEventListener('focus', () => loadDashboard());
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) loadDashboard();
-      });
-      window.addEventListener('online', () => loadDashboard());
+      console.log('Initializing rider dashboard...');
+      try {
+        initializeRiderSession();
+        loadDashboard();
+        startAutoRefresh();
+        // Refresh faster when rider returns to the tab or regains network
+        window.addEventListener('focus', () => loadDashboard());
+        document.addEventListener('visibilitychange', () => {
+          if (!document.hidden) loadDashboard();
+        });
+        window.addEventListener('online', () => loadDashboard());
+        checkNotificationPermission();
+
+        // NEW: populate header inputs from localStorage (no literal ${...} shown)
+        try {
+          const nameEl = document.getElementById('riderNameInput');
+          const phoneEl = document.getElementById('riderPhoneInput');
+          if (nameEl) nameEl.value = localStorage.getItem('riderName') || '';
+          if (phoneEl) phoneEl.value = localStorage.getItem('riderPhone') || '';
+        } catch (_) {}
+      } catch (e) {
+        console.error('Error initializing dashboard:', e);
+        alert('There was an error loading the dashboard. Please refresh the page and try again.');
+      }
     };
     
     function initializeRiderSession() {
@@ -1098,150 +1174,186 @@
     }
     
     function createOrderCard(order, isAvailable) {
-      const details = order.booking_details;
-      const useAssigned = (!isAvailable && order.status === 'assigned');
-      const ts = useAssigned ? (order.assigned_at || order.created_at) : order.created_at;
-      const createdDate = ts ? new Date(ts).toLocaleString() : 'N/A';
-      const timeLabel = useAssigned ? 'Assigned' : 'Created';
-      
-      let actionButtons = '';
-      if (isAvailable) {
-        actionButtons = `
-          <button class="btn btn-accept" onclick="acceptOrder('${order.order_id}')">
-            Accept Order
-          </button>
-        `;
-      } else if (order.status === 'assigned') {
-        actionButtons = `
-          <button class="btn btn-complete" onclick="completeOrder('${order.order_id}')">
-            Mark as Delivered
-          </button>
-        `;
-      }
-
-      // Add call button for assigned (active) orders
-      let callBtn = '';
-      if (!isAvailable && order.status === 'assigned' && order.customer_phone) {
-        callBtn = `
-          <a class="btn btn-accept" style="background:linear-gradient(135deg,#fbbf24,#f59e42);" href="tel:${order.customer_phone}">
-            📞 Call Customer
-          </a>
-        `;
-      }
-
-      // Add checkbox for active orders
-      let pickupCheckbox = '';
-      if (!isAvailable && order.status === 'assigned') {
-        const isChecked = pickedUpOrders.has(order.order_id) ? 'checked' : '';
-        pickupCheckbox = `
-          <div class="pickup-checkbox-container">
-            <label class="checkbox-container">
-              <input type="checkbox" id="pickup-${order.order_id}" onchange="togglePickupStatus('${order.order_id}')" ${isChecked}>
-              <span class="checkmark"></span>
-              <span style="margin-left: 5px; font-size: 14px;">Picked Up</span>
-            </label>
-          </div>
-        `;
-      }
-
-      return `
-        <div class="order-card ${order.status}">
-          <div class="order-header">
-            <div class="order-header-content">
-              <div class="order-info">
-                <div class="order-id">${order.order_id}</div>
-                <div style="margin-top: 5px;">
-                  <span class="order-type ${order.booking_type}">${order.booking_type}</span>
-                  <span class="order-status ${order.status}">${order.status}</span>
-                </div>
-              </div>
-              ${pickupCheckbox}
-            </div>
-          </div>
-          
-          <div class="order-details">
-            <div class="detail-row">
-              <span class="detail-label">Customer:</span>
-              <span class="detail-value">${order.customer_name}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Phone:</span>
-              <span class="detail-value">${order.customer_phone}</span>
-            </div>
-            ${order.booking_type === 'food' ? `
-              <div class="detail-row">
-                <span class="detail-label">Pickup:</span>
-                <span class="detail-value">${details.pickupLocation || 'N/A'}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Items:</span>
-                <span class="detail-value">${details.itemIdentity || 'N/A'}</span>
-              </div>
-            ` : ''}
-            ${order.booking_type === 'parcel' ? `
-              <div class="detail-row">
-                <span class="detail-label">Quantity:</span>
-                <span class="detail-value">${details.quantity || 1} package(s)</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Pickup from:</span>
-                <span class="detail-value">${details.pickupPerson || 'N/A'}</span>
-              </div>
-            ` : ''}
-            ${order.booking_type === 'laundry' ? `
-              <div class="detail-row">
-                <span class="detail-label">Pickup:</span>
-                <span class="detail-value">${details.pickupLocation || 'N/A'}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Basket:</span>
-                <span class="detail-value">${details.basketName || 'N/A'}</span>
-              </div>
-            ` : ''}
-            <div class="detail-row">
-              <span class="detail-label">Delivery:</span>
-              <span class="detail-value">${details.deliveryLocation || 'N/A'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Payment:</span>
-              <span class="detail-value">
-                ${order.payment_status} 
-                ${order.payment_status === 'Not Yet Paid' ? `(Collect ₱${order.payment_amount})` : ''}
-              </span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">${timeLabel}:</span>
-              <span class="detail-value">${createdDate}</span>
-            </div>
-            ${details.notes ? `
-              <div class="detail-row">
-                <span class="detail-label">Notes:</span>
-                <span class="detail-value">${details.notes}</span>
-              </div>
-            ` : ''}
-          </div>
-          
-          <div class="order-actions">
-            ${actionButtons}
-            ${callBtn}
-            <button class="btn btn-view" onclick="viewOrderDetails('${order.order_id}')">
-              View Details
+      try {
+        const details = order.booking_details;
+        const useAssigned = (!isAvailable && order.status === 'assigned');
+        const ts = useAssigned ? (order.assigned_at || order.created_at) : order.created_at;
+        const createdDate = ts ? new Date(ts).toLocaleString() : 'N/A';
+        const timeLabel = useAssigned ? 'Assigned' : 'Created';
+        
+        // Check if this order was previously claimed or has claimed status in database
+        let wasClaimedByThisRider = false;
+        try {
+          const claimedOrders = JSON.parse(localStorage.getItem('claimedOrders') || '[]');
+          wasClaimedByThisRider = claimedOrders.includes(order.order_id);
+        } catch (e) {
+          console.warn('Error checking claimed status', e);
+        }
+        
+        const isItemClaimed = order.delivery_status === 'item_claimed' || order.delivery_status === 'claimed';
+        const isDeliveredByRider = order.delivery_status === 'delivered_by_rider';
+        const isAwaitingCustomerConfirmation = isDeliveredByRider && order.status !== 'completed';
+        
+        let actionButtons = '';
+        if (isAvailable) {
+          actionButtons = `
+            <button class="btn btn-accept" onclick="acceptOrder('${order.order_id}')">
+              Accept Order
             </button>
-          </div>
-          ${order.status === 'assigned' && order.rider_id === riderSessionId ? `
-            <div style="margin-top:12px; padding-top:12px; border-top:1px solid #e5e7eb;">
-              <div style="font-weight:600; color:#1e3c72; margin-bottom:6px;">Send message to customer</div>
-              <div style="display:flex; gap:8px;">
-                <input id="messageInput-${order.order_id}" type="text" placeholder="Type a message..." style="flex:1; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px;" value="${(draftMessages[order.order_id] || '').replace(/"/g, '&quot;')}" />
-                <button id="messageSendBtn-${order.order_id}" class="btn btn-accept" onclick="sendMessage('${order.order_id}')">Send</button>
-              </div>
-              <div id="messageInfo-${order.order_id}" style="font-size:12px; color:#6b7280; margin-top:6px;"></div>
+          `;
+        } else if (order.status === 'assigned') {
+          // CHANGE: First show "Item Claimed" only, then show "Mark as Delivered" only after claiming
+          if (isAwaitingCustomerConfirmation) {
+            // Rider already marked as delivered, waiting for customer
+            actionButtons = `
+              <button class="btn btn-complete" disabled style="background:#888; opacity:0.8;">
+                Awaiting Customer Confirmation
+              </button>
+            `;
+          } else if (wasClaimedByThisRider || isItemClaimed) {
+            // Item is claimed, now show Mark as Delivered button only
+            actionButtons = `
+              <button class="btn btn-complete" onclick="markAsDelivered(this,'${order.order_id}')">
+                Mark as Delivered
+              </button>
+            `;
+          } else {
+            // Not claimed yet, show only Item Claimed button
+            actionButtons = `
+              <button class="btn btn-accept" onclick="markItemClaimed(this,'${order.order_id}')">
+                Item Claimed
+              </button>
+            `;
+          }
+        }
+        
+        // Add call button for assigned (active) orders
+        let callBtn = '';
+        if (!isAvailable && order.status === 'assigned' && order.customer_phone) {
+          callBtn = `
+            <a class="btn btn-accept" style="background:linear-gradient(135deg,#fbbf24,#f59e42);" href="tel:${order.customer_phone}">
+              📞 Call Customer
+            </a>
+          `;
+        }
+        
+        // Add checkbox for active orders
+        let pickupCheckbox = '';
+        if (!isAvailable && order.status === 'assigned') {
+          const isChecked = pickedUpOrders.has(order.order_id) ? 'checked' : '';
+          pickupCheckbox = `
+            <div class="pickup-checkbox-container">
+              <label class="checkbox-container">
+                <input type="checkbox" id="pickup-${order.order_id}" onchange="togglePickupStatus('${order.order_id}')" ${isChecked}>
+                <span class="checkmark"></span>
+                <span style="margin-left: 5px; font-size: 14px;">Picked Up</span>
+              </label>
             </div>
-          ` : ''}
-        </div>
-      `;
+          `;
+        }
+        
+        return `
+          <div class="order-card ${order.status}" data-order-id="${order.order_id}" id="orderCard-${order.order_id}">
+            <div class="order-header">
+              <div class="order-header-content">
+                <div class="order-info">
+                  <div class="order-id">${order.order_id}</div>
+                  <div style="margin-top: 5px;">
+                    <span class="order-type ${order.booking_type}">${order.booking_type}</span>
+                    <span class="order-status ${order.status}">${order.status}</span>
+                  </div>
+                </div>
+                ${pickupCheckbox}
+              </div>
+            </div>
+            
+            <div class="order-details">
+              <div class="detail-row">
+                <span class="detail-label">Customer:</span>
+                <span class="detail-value">${order.customer_name}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Phone:</span>
+                <span class="detail-value">${order.customer_phone}</span>
+              </div>
+              ${order.booking_type === 'food' ? `
+                <div class="detail-row">
+                  <span class="detail-label">Pickup:</span>
+                  <span class="detail-value">${details.pickupLocation || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Items:</span>
+                  <span class="detail-value">${details.itemIdentity || 'N/A'}</span>
+                </div>
+              ` : ''}
+              ${order.booking_type === 'parcel' ? `
+                <div class="detail-row">
+                  <span class="detail-label">Quantity:</span>
+                  <span class="detail-value">${details.quantity || 1} package(s)</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Pickup from:</span>
+                  <span class="detail-value">${details.pickupPerson || 'N/A'}</span>
+                </div>
+              ` : ''}
+              ${order.booking_type === 'laundry' ? `
+                <div class="detail-row">
+                  <span class="detail-label">Pickup:</span>
+                  <span class="detail-value">${details.pickupLocation || 'N/A'}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Basket:</span>
+                  <span class="detail-value">${details.basketName || 'N/A'}</span>
+                </div>
+              ` : ''}
+              <div class="detail-row">
+                <span class="detail-label">Delivery:</span>
+                <span class="detail-value">${details.deliveryLocation || 'N/A'}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Payment:</span>
+                <span class="detail-value">
+                  ${order.payment_status} 
+                  ${order.payment_status === 'Not Yet Paid' ? `(Collect ₱${order.payment_amount})` : ''}
+                </span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">${timeLabel}:</span>
+                <span class="detail-value">${createdDate}</span>
+              </div>
+              ${details.notes ? `
+                <div class="detail-row">
+                  <span class="detail-label">Notes:</span>
+                  <span class="detail-value">${details.notes}</span>
+                </div>
+              ` : ''}
+            </div>
+            
+            <div class="order-actions">
+              ${actionButtons}
+              ${callBtn}
+              <button class="btn btn-view" onclick="viewOrderDetails('${order.order_id}')">
+                View Details
+              </button>
+            </div>
+            ${order.status === 'assigned' && order.rider_id === riderSessionId ? `
+              <div style="margin-top:12px; padding-top:12px; border-top:1px solid #e5e7eb;">
+                <div style="font-weight:600; color:#1e3c72; margin-bottom:6px;">Send message to customer</div>
+                <div style="display:flex; gap:8px;">
+                  <input id="messageInput-${order.order_id}" type="text" placeholder="Type a message..." style="flex:1; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px;" value="${(draftMessages[order.order_id] || '').replace(/"/g, '&quot;')}" />
+                  <button id="messageSendBtn-${order.order_id}" class="btn btn-accept" onclick="sendMessage('${order.order_id}')">Send</button>
+                </div>
+                <div id="messageInfo-${order.order_id}" style="font-size:12px; color:#6b7280; margin-top:6px;"></div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } catch (e) {
+        console.error('Error creating order card:', e, order);
+        return `<div class="order-card error">Error displaying order ${order.order_id || 'unknown'}</div>`;
+      }
     }
-
+    
     function attachMessageInputHandlers() {
       const inputs = document.querySelectorAll('input[id^="messageInput-"]');
       inputs.forEach(inp => {
@@ -1270,8 +1382,52 @@
       });
     }
     
+    function updateRiderInfo(field, value) {
+      if (field === 'name') {
+        localStorage.setItem('riderName', value.trim());
+      } else if (field === 'phone') {
+        localStorage.setItem('riderPhone', value.trim());
+      }
+      showNotification('Rider information updated successfully!');
+    }
+
     function acceptOrder(orderId) {
-      showRiderInfoModal(orderId);
+      const riderName = localStorage.getItem('riderName');
+      const riderPhone = localStorage.getItem('riderPhone');
+
+      if (!riderName || !riderPhone) {
+        alert('Please fill in your name and phone number before accepting an order.');
+        return;
+      }
+
+      const requestData = {
+        action: 'assign_rider',
+        order_id: orderId,
+        rider_id: riderSessionId,
+        rider_name: riderName,
+        rider_phone: riderPhone
+      };
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showNotification('Order accepted successfully!');
+          loadDashboard();
+        } else {
+          showNotification('Error accepting order: ' + data.message, 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error accepting order. Please try again.', 'error');
+      });
     }
 
     // Send a simplex message to the user for a given order
@@ -1337,12 +1493,12 @@
           <div class="modal-body">
             <div class="form-group">
               <label for="riderNameInput">Your Full Name <span class="required">*</span></label>
-              <input type="text" id="riderNameInput" placeholder="Enter your full name" required>
+              <input type="text" id="riderNameInput" placeholder="Enter your full name" value="${riderInfo.name}" required>
               <div class="error-message" id="nameInputError">Please enter your full name</div>
             </div>
             <div class="form-group">
               <label for="riderPhoneInput">Your Phone Number <span class="required">*</span></label>
-              <input type="tel" id="riderPhoneInput" placeholder="09123456789" required>
+              <input type="tel" id="riderPhoneInput" placeholder="09123456789" value="${riderInfo.phone}" required>
               <div class="error-message" id="phoneInputError">Please enter a valid phone number</div>
             </div>
           </div>
@@ -1352,16 +1508,13 @@
           </div>
         </div>
       `;
-      
       document.body.appendChild(modal);
       
-      // Focus on the first input
       setTimeout(() => {
         document.getElementById('riderNameInput').focus();
       }, 100);
       
-      // Handle Enter key
-      modal.addEventListener('keydown', function(e) {
+      modal.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
           submitRiderInfo(orderId);
         } else if (e.key === 'Escape') {
@@ -1377,37 +1530,40 @@
       }
     }
     
-    function submitRiderInfo(orderId) {
-      const riderName = document.getElementById('riderNameInput').value.trim();
-      const riderPhone = document.getElementById('riderPhoneInput').value.trim();
-      
-      // Clear previous errors
+    function submitRiderInfo(orderId, name = null, phone = null) {
+      const riderName = name || document.getElementById('riderNameInput').value.trim();
+      const riderPhone = phone || document.getElementById('riderPhoneInput').value.trim();
+
       document.querySelectorAll('.modal-content .error-message').forEach(msg => msg.style.display = 'none');
       document.querySelectorAll('.modal-content .input-error').forEach(input => input.classList.remove('input-error'));
-      
+
       let isValid = true;
-      
-      // Validate name
+
       if (!riderName) {
         showModalError('riderNameInput', 'nameInputError', 'Please enter your full name');
         isValid = false;
       }
-      
-      // Validate phone
+
       if (!riderPhone || riderPhone.length < 10) {
         showModalError('riderPhoneInput', 'phoneInputError', 'Please enter a valid phone number');
         isValid = false;
       }
-      
+
       if (!isValid) {
         return;
       }
-      
-      // Disable the accept button to prevent double submission
-      const acceptBtn = document.querySelector('.btn-accept');
-      acceptBtn.disabled = true;
-      acceptBtn.textContent = 'Accepting...';
-      
+
+      localStorage.setItem('riderName', riderName);
+      localStorage.setItem('riderPhone', riderPhone);
+      riderInfo.name = riderName;
+      riderInfo.phone = riderPhone;
+
+      if (!name && !phone) {
+        const acceptBtn = document.querySelector('.btn-accept');
+        acceptBtn.disabled = true;
+        acceptBtn.textContent = 'Accepting...';
+      }
+
       const requestData = {
         action: 'assign_rider',
         order_id: orderId,
@@ -1415,33 +1571,38 @@
         rider_name: riderName,
         rider_phone: riderPhone
       };
-      
+
       fetch(SCRIPT_URL, {
         method: 'POST',
         headers: {
-          // Use text/plain to avoid CORS preflight with Apps Script
           'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify(requestData)
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          closeRiderInfoModal();
-          showNotification('Order accepted successfully!');
-          loadDashboard();
-        } else {
-          showNotification('Error accepting order: ' + data.message, 'error');
-          acceptBtn.disabled = false;
-          acceptBtn.textContent = 'Accept Order';
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        showNotification('Error accepting order. Please try again.', 'error');
-        acceptBtn.disabled = false;
-        acceptBtn.textContent = 'Accept Order';
-      });
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            closeRiderInfoModal();
+            showNotification('Order accepted successfully!');
+            loadDashboard();
+          } else {
+            showNotification('Error accepting order: ' + data.message, 'error');
+            if (!name && !phone) {
+              const acceptBtn = document.querySelector('.btn-accept');
+              acceptBtn.disabled = false;
+              acceptBtn.textContent = 'Accept Order';
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Error accepting order. Please try again.', 'error');
+          if (!name && !phone) {
+            const acceptBtn = document.querySelector('.btn-accept');
+            acceptBtn.disabled = false;
+            acceptBtn.textContent = 'Accept Order';
+          }
+        });
     }
     
     function showModalError(inputId, errorId, message) {
@@ -1451,45 +1612,129 @@
       errorElement.style.display = 'block';
     }
     
-    function completeOrder(orderId) {
-      if (!confirm('Are you sure you want to mark this order as delivered?')) {
-        return;
-      }
-      
-      const requestData = {
-        action: 'complete_booking',
-        order_id: orderId
-      };
-      
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          // Use text/plain to avoid CORS preflight with Apps Script
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify(requestData)
-      })
-      .then(async response => {
-        const raw = await response.text();
-        try {
-          return JSON.parse(raw);
-        } catch (e) {
-          console.warn('Non-JSON response from complete_booking:', raw);
-          throw new Error('Unexpected response from server: ' + raw.slice(0, 200));
-        }
-      })
-      .then(data => {
-        if (data.success) {
-          showNotification('Order marked as delivered!');
-          loadDashboard();
+    function markAsDelivered(btn, orderId) {
+      // disable clicked button immediately
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.dataset.origText = btn.textContent;
+          btn.textContent = 'Processing...';
         } else {
-          showNotification('Error completing order: ' + data.message, 'error');
+          // fallback: try to find the button
+          btn = document.querySelector(`#orderCard-${orderId} .btn-complete`);
+          if (btn) { btn.disabled = true; btn.dataset.origText = btn.textContent; btn.textContent = 'Processing...'; }
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        showNotification(error && error.message ? error.message : 'Error completing order. Please try again.', 'error');
-      });
+
+        if (!confirm('Are you sure you want to mark this order as delivered? This will notify the customer to confirm receipt.')) {
+          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Mark as Delivered'; }
+          return;
+        }
+
+        const requestData = {
+          action: 'updateDeliveryStatus',
+          order_id: orderId,
+          status: 'delivered_by_rider'
+        };
+
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('Order marked as delivered! Awaiting customer confirmation.');
+            
+            // Update button to show "Awaiting Customer Confirmation"
+            if (btn) {
+              btn.disabled = true;
+              btn.textContent = 'Awaiting Customer Confirmation';
+              btn.style.background = '#888';
+              btn.style.opacity = '0.8';
+            }
+            
+            // Refresh dashboard to update the UI
+            loadDashboard();
+          } else {
+            showNotification('Error marking as delivered: ' + data.message, 'error');
+            if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Mark as Delivered'; }
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Error marking as delivered. Please try again.', 'error');
+          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Mark as Delivered'; }
+        });
+      } catch (e) {
+        console.error('markAsDelivered error', e);
+      }
+    }
+
+    function markItemClaimed(btn, orderId) {
+      console.log('Marking item claimed:', orderId);
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.dataset.origText = btn.textContent;
+          btn.textContent = 'Marking...';
+        } else {
+          btn = document.querySelector(`#orderCard-${orderId} .btn-accept`);
+          if (btn) { btn.disabled = true; btn.dataset.origText = btn.textContent; btn.textContent = 'Marking...'; }
+        }
+
+        if (!confirm('Are you sure you want to mark this item as claimed?')) {
+          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Item Claimed'; }
+          return;
+        }
+
+        const requestData = {
+          action: 'updateDeliveryStatus',
+          order_id: orderId,
+          status: 'item_claimed'
+        };
+
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showNotification('Item marked as claimed!');
+            
+            // Store claimed orders in localStorage to maintain state between refreshes
+            let claimedOrders = [];
+            try {
+              claimedOrders = JSON.parse(localStorage.getItem('claimedOrders') || '[]');
+            } catch (e) {
+              console.warn('Error parsing claimed orders', e);
+              claimedOrders = [];
+            }
+            
+            if (!claimedOrders.includes(orderId)) {
+              claimedOrders.push(orderId);
+              localStorage.setItem('claimedOrders', JSON.stringify(claimedOrders));
+            }
+            
+            // Refresh immediately to show the "Mark as Delivered" button
+            loadDashboard();
+          } else {
+            showNotification('Error marking item as claimed: ' + data.message, 'error');
+            if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Item Claimed'; }
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          showNotification('Error marking item as claimed. Please try again.', 'error');
+          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Item Claimed'; }
+        });
+      } catch (e) {
+        console.error('markItemClaimed error', e);
+        showNotification('Error in markItemClaimed function', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Item Claimed'; }
+      }
     }
     
     function viewOrderDetails(orderId) {
@@ -1543,28 +1788,36 @@
     }
     
     function startAutoRefresh() {
-      // Refresh every 8 seconds to receive bookings faster
+      // Refresh every 4 seconds to sync faster with bookings
       if (refreshInterval) clearInterval(refreshInterval);
       if (isTypingMessage) return; // don't refresh while typing
+      
       refreshInterval = setInterval(() => {
-        if (!isTypingMessage) {
-          // Load dashboard data
-          loadDashboard();
-          
-          // Check for new bookings and show notifications
-          RiderNotificationService.pollRiderNotifications(SCRIPT_URL, lastNotificationCheck)
-            .then(newBookings => {
-              if (newBookings.length > 0) {
-                RiderNotificationService.showRiderNotifications(newBookings);
-              }
-              // Update last notification check time
-              lastNotificationCheck = Date.now();
-            })
-            .catch(error => {
-              console.error('Error checking for notifications:', error);
-            });
+        try {
+          if (!isTypingMessage) {
+            // Load dashboard data
+            loadDashboard();
+            
+            // Only check for notifications if service is defined
+            if (typeof RiderNotificationService !== 'undefined') {
+              // Check for new bookings and show notifications
+              RiderNotificationService.pollRiderNotifications(SCRIPT_URL, lastNotificationCheck)
+                .then(newBookings => {
+                  if (newBookings.length > 0) {
+                    RiderNotificationService.showRiderNotifications(newBookings);
+                  }
+                  // Update last notification check time
+                  lastNotificationCheck = Date.now();
+                })
+                .catch(error => {
+                  console.error('Error checking for notifications:', error);
+                });
+            }
+          }
+        } catch (e) {
+          console.error('Error in auto-refresh interval:', e);
         }
-      }, 8000);
+      }, 4000); // Poll every 4 seconds
     }
     
     function showNotification(message, type = 'success') {
@@ -1620,6 +1873,24 @@
         clearInterval(refreshInterval);
       }
     });
+    
+    function checkNotificationPermission() {
+      if (!('Notification' in window)) {
+        console.warn('This browser does not support notifications.');
+        return;
+      }
+
+      if (Notification.permission === 'default') {
+        alert('Please enable notifications to stay updated with your orders.');
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            console.log('Notifications enabled.');
+          } else {
+            console.warn('Notifications not enabled.');
+          }
+        });
+      }
+    }
   </script>
   <script src="info-modal.js"></script>
 </body>
