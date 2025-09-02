@@ -943,6 +943,11 @@
   <!-- Notification -->
   <div class="notification" id="notification"></div>
   
+  <!-- Add audio element for notification sound -->
+  <audio id="notificationSound" preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=notification-sound-7062.mp3" type="audio/mpeg">
+  </audio>
+  
   <script>
     // Fallback if notification-service.js failed to load
     if (typeof RiderNotificationService === 'undefined') {
@@ -965,6 +970,7 @@
     let riderSessionId = null;
     let refreshInterval = null;
     let allOrders = [];
+    let previousOrderIds = []; // Track previous order IDs to detect new ones
     let isTypingMessage = false;
     let lastNotificationCheck = Date.now(); // Track last notification check time
     const draftMessages = {}; // orderId -> draft text
@@ -1058,6 +1064,16 @@
         .then(response => response.json())
         .then(data => {
           if (data.success) {
+            // Check for new orders before updating allOrders
+            const newOrders = checkForNewOrders(data.bookings);
+            
+            // If new orders detected, play notification sound
+            if (newOrders.length > 0) {
+              playNotificationSound();
+              console.log('New bookings detected:', newOrders.map(o => `${o.booking_type}: ${o.order_id}`));
+            }
+            
+            // Update all orders
             allOrders = data.bookings;
             updateStatistics();
             displayAvailableOrders();
@@ -1071,6 +1087,23 @@
           console.error('Error:', error);
           showNotification('Error loading orders. Please try again.', 'error');
         });
+    }
+    
+    // Function to check for new orders by comparing with previous state
+    function checkForNewOrders(currentOrders) {
+      // Get pending orders
+      const pendingOrders = currentOrders.filter(order => order.status === 'pending');
+      
+      // Get current order IDs
+      const currentOrderIds = pendingOrders.map(order => order.order_id);
+      
+      // Find new orders (in current but not in previous)
+      const newOrders = pendingOrders.filter(order => !previousOrderIds.includes(order.order_id));
+      
+      // Update previous order IDs for next check
+      previousOrderIds = currentOrderIds;
+      
+      return newOrders;
     }
     
     function updateStatistics() {
@@ -1805,6 +1838,8 @@
                 .then(newBookings => {
                   if (newBookings.length > 0) {
                     RiderNotificationService.showRiderNotifications(newBookings);
+                    // Play notification sound when new bookings are detected
+                    playNotificationSound();
                   }
                   // Update last notification check time
                   lastNotificationCheck = Date.now();
@@ -1818,6 +1853,26 @@
           console.error('Error in auto-refresh interval:', e);
         }
       }, 4000); // Poll every 4 seconds
+    }
+    
+    // Add function to play notification sound
+    function playNotificationSound() {
+      try {
+        const sound = document.getElementById('notificationSound');
+        if (sound) {
+          // Reset the audio to the beginning if it was already playing
+          sound.pause();
+          sound.currentTime = 0;
+          
+          // Play the sound
+          sound.play().catch(err => {
+            console.warn('Could not play notification sound:', err);
+            // Some browsers require user interaction before playing audio
+          });
+        }
+      } catch (error) {
+        console.error('Error playing notification sound:', error);
+      }
     }
     
     function showNotification(message, type = 'success') {
