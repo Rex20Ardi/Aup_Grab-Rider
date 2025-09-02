@@ -51,13 +51,13 @@
     }
     
     .header h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
+      font-size: 1.9rem; /* was 2.5rem */
+      margin-bottom: 6px; /* was 10px */
     }
     
     .header p {
       opacity: 0.9;
-      font-size: 1.1rem;
+      font-size: 0.95rem; /* was 1.1rem */
     }
     
     .rider-info {
@@ -85,8 +85,8 @@
     
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(3, minmax(0, 1fr)); /* force one row of three */
+      gap: 16px; /* slightly tighter gap */
       margin-bottom: 30px;
     }
     
@@ -227,43 +227,34 @@
         margin: 10px;
         border-radius: 15px;
       }
-      
       .header {
         padding: 20px;
       }
-      
       .header h1 {
-        font-size: 2rem;
+        font-size: 1.6rem; /* was 2rem */
       }
-      
       .dashboard-content {
         padding: 20px;
       }
-      
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-      }
-      
+
+      /* Ensure 3-in-a-row on tablets/phones too */
+      .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
       .order-header {
         flex-direction: column;
         align-items: flex-start;
       }
-      
       .pickup-checkbox-container {
         margin-left: 0;
         margin-top: 10px;
         align-self: flex-start;
       }
-      
       .order-id {
         font-size: 16px;
       }
-      
       .order-details {
         padding: 10px;
       }
-      
       .customer-info, .restaurant-info {
         padding: 8px;
       }
@@ -292,18 +283,10 @@
 
     /* Extra-tight layout for very small devices */
     @media (max-width: 400px) {
-      .stats-grid {
-        gap: 6px;
-      }
-      .stat-card {
-        padding: 10px;
-      }
-      .stat-number {
-        font-size: 1.45rem;
-      }
-      .stat-label {
-        font-size: 0.68rem;
-      }
+      .stats-grid { gap: 6px; }
+      .stat-card { padding: 10px; }
+      .stat-number { font-size: 1.45rem; }
+      .stat-label { font-size: 0.68rem; }
     }
     
     .orders-grid {
@@ -759,44 +742,23 @@
         margin: 10px;
         border-radius: 15px;
       }
-      
       .header {
         padding: 20px;
       }
-      
       .header h1 {
-        font-size: 2rem;
+        font-size: 1.6rem; /* was 2rem */
       }
-      
       .dashboard-content {
         padding: 20px;
       }
-      
-      .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-      }
-      
-      .order-header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      
-      .order-actions {
-        flex-direction: column;
-      }
-      
-      .btn {
-        width: 100%;
-        text-align: center;
-      }
-      
-      .refresh-btn {
-        bottom: 20px;
-        right: 20px;
-        width: 50px;
-        height: 50px;
-      }
+
+      /* Ensure 3-in-a-row here as well */
+      .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+      .order-header { flex-direction: column; align-items: flex-start; }
+      .order-actions { flex-direction: column; }
+      .btn { width: 100%; text-align: center; }
+      .refresh-btn { bottom: 20px; right: 20px; width: 50px; height: 50px; }
     }
     
     /* Mobile styles for tabs */
@@ -881,6 +843,12 @@
       .message-row { flex-direction: row; } /* keep in a row on mobile */
       .message-row .message-send { flex-basis: 84px; width: 84px; padding: 8px 10px; font-size: 0.9rem; }
     }
+
+    /* Collapsible rider info */
+    .rider-info.hidden { display: none; }
+
+    /* Header actions row */
+    .header-actions { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -897,10 +865,18 @@
         </label>
         <span id="activeLabel" style="font-weight:600;">Inactive</span>
       </div>
-      <!-- New: See other riders button -->
-      <button class="btn-view" style="margin-left:8px; padding:8px 12px;" onclick="showActiveRiders()">See other riders</button>
+
+      <!-- Buttons aligned in a single row -->
+      <div class="header-actions">
+        <!-- New: See other riders button -->
+        <button class="btn-view" style="padding:8px 12px;" onclick="showActiveRiders()">See other riders</button>
+        <button id="riderInfoToggle" class="btn-view" style="padding:8px 12px;" onclick="toggleRiderInfo()" aria-expanded="true">
+          Hide rider info
+        </button>
+      </div>
+
       <p>Manage your deliveries and track orders</p>
-      
+
       <div class="rider-info">
         <strong>Rider ID:</strong>
         <span class="rider-id" id="riderSessionId"></span>
@@ -1160,6 +1136,8 @@
           if (nameEl) nameEl.value = localStorage.getItem('riderName') || '';
           if (phoneEl) phoneEl.value = localStorage.getItem('riderPhone') || '';
         } catch (_) {}
+        // NEW: apply saved visibility for rider info
+        initializeRiderInfoToggle();
       } catch (e) {
         console.error('Error initializing dashboard:', e);
         alert('There was an error loading the dashboard. Please refresh the page and try again.');
@@ -2262,6 +2240,32 @@
         const sw = document.getElementById('activeSwitch');
         if (sw) sw.focus();
       } catch (_) {}
+    }
+
+    // Rider info toggle helpers
+    function initializeRiderInfoToggle() {
+      try {
+        const saved = localStorage.getItem('riderInfoVisible');
+        const visible = (saved === null) ? true : (saved === '1' || saved === 'true');
+        setRiderInfoVisibility(visible);
+      } catch (_) {
+        setRiderInfoVisibility(true);
+      }
+    }
+    function toggleRiderInfo() {
+      const panel = document.querySelector('.rider-info');
+      const isHidden = panel && panel.classList.contains('hidden');
+      setRiderInfoVisibility(isHidden);
+    }
+    function setRiderInfoVisibility(show) {
+      const panel = document.querySelector('.rider-info');
+      const btn = document.getElementById('riderInfoToggle');
+      if (panel) panel.classList.toggle('hidden', !show);
+      if (btn) {
+        btn.textContent = show ? 'Hide rider info' : 'Show rider info';
+        btn.setAttribute('aria-expanded', String(show));
+      }
+      try { localStorage.setItem('riderInfoVisible', show ? '1' : '0'); } catch (_) {}
     }
   </script>
   <script src="info-modal.js"></script>
