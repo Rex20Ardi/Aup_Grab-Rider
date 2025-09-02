@@ -1285,6 +1285,17 @@
           `;
         }
         
+        // Check for both possible payment method field names
+        const paymentMethod = order.payment_method || order.paymentMethod;
+        
+        // Debug the payment details to see what's coming from the server
+        console.log('Order payment details:', {
+          orderId: order.order_id,
+          status: order.payment_status,
+          amount: order.payment_amount,
+          method: paymentMethod
+        });
+        
         return `
           <div class="order-card ${order.status}" data-order-id="${order.order_id}" id="orderCard-${order.order_id}">
             <div class="order-header">
@@ -1346,8 +1357,8 @@
               <div class="detail-row">
                 <span class="detail-label">Payment:</span>
                 <span class="detail-value">
-                  ${order.payment_status} 
-                  ${order.payment_status === 'Not Yet Paid' ? `(Collect ₱${order.payment_amount})` : ''}
+                  ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
+                    ` (₱${order.payment_amount} - ${paymentMethod || 'Cash'})` : ''}
                 </span>
               </div>
               <div class="detail-row">
@@ -1775,16 +1786,21 @@
       if (!order) return;
       
       const details = order.booking_details;
+      // Get payment method from either possible field
+      const paymentMethod = order.payment_method || order.paymentMethod;
+      
       let detailsText = `Order ID: ${order.order_id}\n`;
       detailsText += `Type: ${order.booking_type}\n`;
       detailsText += `Customer: ${order.customer_name}\n`;
       detailsText += `Phone: ${order.customer_phone}\n`;
       detailsText += `Status: ${order.status}\n`;
-      detailsText += `Payment: ${order.payment_status}\n`;
+      detailsText += `Payment: ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
+        ` (₱${order.payment_amount} - ${paymentMethod || 'Cash'})` : ''}\n`;
       
-      if (order.payment_status === 'Not Yet Paid') {
-        detailsText += `Amount to Collect: ₱${order.payment_amount}\n`;
-      }
+      // Remove the old format since we now include this in the payment status line
+      // if (order.payment_status === 'Not Yet Paid') {
+      //   detailsText += `Amount to Collect: ₱${order.payment_amount}${paymentMethod ? ' via ' + paymentMethod : ''}\n`;
+      // }
       
       // Type-specific details
       if (order.booking_type === 'parcel') {
