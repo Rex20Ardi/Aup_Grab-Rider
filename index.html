@@ -1552,7 +1552,7 @@
                 <span class="detail-value">${details.deliveryLocation || 'N/A'}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Payment:</span>
+                <span class="detail-label">Item Payment Status:</span>
                 <span class="detail-value">
                   ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
                     ` (₱${order.payment_amount})` : ''}
@@ -2010,7 +2010,7 @@
       detailsText += `Customer: ${order.customer_name}\n`;
       detailsText += `Phone: ${order.customer_phone}\n`;
       detailsText += `Status: ${order.status}\n`;
-      detailsText += `Payment: ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
+      detailsText += `Item Payment Status: ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
         ` (₱${order.payment_amount})` : ''}\n`;
       detailsText += `Payment Method: ${paymentMethod || 'Cash'}\n`;
       
