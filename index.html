@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rider Dashboard - Aup Grab</title>
+  <title>Aup Grab Booking System</title>
   <link rel="stylesheet" href="info-modal.css">
-  <link rel="stylesheet" href="notifications.css">
-  <script src="notification-service.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -16,14 +14,17 @@
     
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #3b82f6 100%);
+      background: linear-gradient(135deg, #2d5016 0%, #4a7c59 50%, #6b8e23 100%);
       min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 20px;
     }
     
     .container {
-      max-width: 1200px;
-      margin: 0 auto;
+      max-width: 800px;
+      width: 100%;
       background: white;
       border-radius: 20px;
       overflow: hidden;
@@ -43,697 +44,188 @@
     }
     
     .header {
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      background: linear-gradient(135deg, #4a7c59, #2d5016);
       color: white;
-      padding: 30px;
+      padding: 40px 30px;
       text-align: center;
-      position: relative;
-    }
-    
-    .header h1 {
-      font-size: 1.9rem; /* was 2.5rem */
-      margin-bottom: 6px; /* was 10px */
-    }
-    
-    .header p {
-      opacity: 0.9;
-      font-size: 0.95rem; /* was 1.1rem */
-    }
-    
-    .rider-info {
-      background: rgba(255,255,255,0.1);
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
-      text-align: left;
-    }
-    
-    .rider-id {
-      font-family: monospace;
-      font-weight: bold;
-      color: #fbbf24;
-      background: rgba(255,255,255,0.2);
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-      margin-left: 5px;
-    }
-    
-    .dashboard-content {
-      padding: 30px;
-    }
-    
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr)); /* force one row of three */
-      gap: 16px; /* slightly tighter gap */
-      margin-bottom: 30px;
-    }
-    
-    .stat-card {
-      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-      padding: 20px;
-      border-radius: 15px;
-      text-align: center;
-      border: 2px solid transparent;
-      transition: all 0.3s ease;
-    }
-    
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    }
-    
-    .stat-card.pending {
-      border-color: #fbbf24;
-      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    }
-    
-    .stat-card.assigned {
-      border-color: #3b82f6;
-      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    }
-    
-    .stat-card.completed {
-      border-color: #10b981;
-      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    }
-    
-    .stat-number {
-      font-size: 2.5rem;
-      font-weight: bold;
-      color: #1e3c72;
-      margin-bottom: 5px;
-    }
-    
-    .stat-label {
-      color: #666;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .section-title {
-      font-size: 1.5rem;
-      color: #1e3c72;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .orders-section {
-      margin-top: 30px;
-    }
-    
-    /* Orders Tabs */
-    .orders-tabs {
-      display: flex;
-      gap: 10px;
-      margin: 30px 0 20px 0;
-      border-bottom: 2px solid #e5e7eb;
-    }
-    
-    .tab-button {
-      background: #f3f4f6;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 8px 8px 0 0;
-      font-weight: 600;
-      color: #6b7280;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border-bottom: 3px solid transparent;
-    }
-    
-    .tab-button:hover {
-      background: #e5e7eb;
-      color: #374151;
-    }
-    
-    .tab-button.active {
-      background: #3b82f6;
-      color: white;
-      border-bottom: 3px solid #1e3c72;
-    }
-    
-    .tab-content {
-      display: none;
-    }
-    
-    .tab-content.active {
-      display: block;
-    }
-    
-    /* Checkbox styles */
-    .checkbox-container {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    
-    .checkbox-container input {
-      width: 16px;
-      height: 16px;
-      margin: 0;
-      cursor: pointer;
-    }
-    
-    .checkmark {
-      margin-left: 5px;
-    }
-    
-    /* Order card header adjustments */
-    .order-header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      width: 100%;
-    }
-    
-    .order-info {
-      flex: 1;
-    }
-    
-    .pickup-checkbox-container {
-      margin-left: 15px;
-      flex-shrink: 0;
-    }
-    
-    /* Mobile responsive styles */
-    @media (max-width: 768px) {
-      .container {
-        margin: 10px;
-        border-radius: 15px;
-      }
-      .header {
-        padding: 20px;
-      }
-      .header h1 {
-        font-size: 1.6rem; /* was 2rem */
-      }
-      .dashboard-content {
-        padding: 20px;
-      }
-
-      /* Ensure 3-in-a-row on tablets/phones too */
-      .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
-
-      .order-header {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .pickup-checkbox-container {
-        margin-left: 0;
-        margin-top: 10px;
-        align-self: flex-start;
-      }
-      .order-id {
-        font-size: 16px;
-      }
-      .order-details {
-        padding: 10px;
-      }
-      .customer-info, .restaurant-info {
-        padding: 8px;
-      }
-    }
-    
-    /* Make indicators smaller and in a single row on mobile */
-    @media (max-width: 600px) {
-      .stats-grid {
-        grid-template-columns: repeat(3, 1fr); /* all three in one row */
-        gap: 8px;
-        margin-bottom: 16px;
-      }
-      .stat-card {
-        padding: 12px;
-        border-radius: 10px;
-      }
-      .stat-number {
-        font-size: 1.6rem;
-        margin-bottom: 2px;
-      }
-      .stat-label {
-        font-size: 0.72rem;
-        letter-spacing: 0.2px;
-      }
-    }
-
-    /* Extra-tight layout for very small devices */
-    @media (max-width: 400px) {
-      .stats-grid { gap: 6px; }
-      .stat-card { padding: 10px; }
-      .stat-number { font-size: 1.45rem; }
-      .stat-label { font-size: 0.68rem; }
-    }
-    
-    .orders-grid {
-      display: grid;
-      gap: 20px;
-    }
-    
-    .order-card {
-      background: white;
-      border: 2px solid #e5e7eb;
-      border-radius: 15px;
-      padding: 25px;
-      transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
     }
     
-    .order-card::before {
+    .header::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: #fbbf24;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
     }
     
-    .order-card.assigned::before {
-      background: #3b82f6;
-    }
-    
-    .order-card.completed::before {
-      background: #10b981;
-    }
-    
-    .order-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      border-color: #3b82f6;
-    }
-    
-    .order-header {
-      display: flex;
-      justify-content: between;
-      align-items: flex-start;
-      margin-bottom: 15px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    
-    .order-id {
-      font-family: monospace;
-      font-weight: bold;
-      color: #1e3c72;
-      background: #f3f4f6;
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-    }
-    
-    .order-type {
-      background: #3b82f6;
-      color: white;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-    
-    .order-type.food {
-      background: #f59e0b;
-    }
-    
-    .order-type.laundry {
-      background: #8b5cf6;
-    }
-    
-    .order-type.parcel {
-      background: #10b981;
-    }
-    
-    .order-status {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-    
-    .order-status.pending {
-      background: #fef3c7;
-      color: #92400e;
-    }
-    
-    .order-status.assigned {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-    
-    .order-status.completed {
-      background: #d1fae5;
-      color: #065f46;
-    }
-    
-    .order-details {
-      margin: 15px 0;
-    }
-    
-    .detail-row {
-      display: flex;
-      margin-bottom: 8px;
-      align-items: flex-start;
-      gap: 10px;
-    }
-    
-    .detail-label {
-      font-weight: 600;
-      color: #374151;
-      min-width: 100px;
-      font-size: 0.9rem;
-    }
-    
-    .detail-value {
-      color: #6b7280;
-      flex: 1;
-      font-size: 0.9rem;
-    }
-    
-    .order-actions {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 0.9rem;
-    }
-    
-    .btn-accept {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: white;
-    }
-    
-    .btn-accept:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
-    }
-    
-    .btn-complete {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: white;
-    }
-    
-    .btn-complete:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-    }
-    
-    .btn-view {
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #d1d5db;
-    }
-    
-    .btn-view:hover {
-      background: #e5e7eb;
-    }
-    
-    .btn:disabled {
-      background: #d1d5db;
-      color: #9ca3af;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-    
-    .refresh-btn {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-    
-    .refresh-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4);
-    }
-    
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #6b7280;
-    }
-    
-    .loading-spinner {
-      display: inline-block;
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f4f6;
-      border-radius: 50%;
-      border-top-color: #3b82f6;
-      animation: spin 1s ease-in-out infinite;
-      margin-bottom: 15px;
-    }
-    
-    @keyframes spin {
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
     
-    .empty-state {
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .booking-options {
+      padding: 50px 30px;
+      background: white;
+    }
+    
+    .options-title {
       text-align: center;
-      padding: 60px 20px;
-      color: #6b7280;
+      font-size: 2rem;
+      color: #2d5016;
+      margin-bottom: 40px;
+      font-weight: 600;
     }
     
-    .empty-state svg {
-      margin-bottom: 20px;
-      opacity: 0.5;
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 30px;
+      max-width: 700px;
+      margin: 0 auto;
     }
     
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #10b981;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      transform: translateX(400px);
-      transition: transform 0.3s ease;
-      z-index: 1001;
-    }
-    
-    .notification.show {
-      transform: translateX(0);
-    }
-    
-    .notification.error {
-      background: #ef4444;
-    }
-    
-    /* Info button */
-    .info-btn {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(255,255,255,0.2);
-      color: white;
-      border: none;
-      padding: 10px 12px;
-      border-radius: 50%;
+    .option-card {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 15px;
+      padding: 30px 20px;
+      text-align: center;
       cursor: pointer;
-      font-size: 16px;
-      transition: background 0.3s;
-      line-height: 1;
+      transition: all 0.3s ease;
+      border: 3px solid transparent;
+      position: relative;
+      overflow: hidden;
     }
-    .info-btn:hover { background: rgba(255,255,255,0.3); }
     
-    /* Info modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index: 2000; }
-    .modal { background:#fff; width: min(720px, 92vw); max-height: 85vh; overflow:auto; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
-    .modal-header { padding:16px 20px; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between; }
-    .modal-header h3 { margin:0; font-size: 1.2rem; color:#1e3c72; }
-    .modal-body { padding: 16px 20px; color:#333; }
-    .modal-body h4 { margin:16px 0 8px; color:#1e3c72; }
-    .modal-body ul { padding-left: 18px; margin: 8px 0; }
-    .close-btn { background:#eee; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; }
-    
-    /* Modal Styles */
-    .modal-overlay {
-      position: fixed;
+    .option-card::before {
+      content: '';
+      position: absolute;
       top: 0;
-      left: 0;
+      left: -100%;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      /* keep hidden by default; visibility controlled via .show */
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-      animation: fadeIn 0.3s ease-out;
-    }
-    .modal-overlay.show { display: flex; }
-    
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      transition: left 0.5s;
     }
     
-    .modal-content {
-      background: white;
-      border-radius: 15px;
-      padding: 0;
-      max-width: 500px;
-      width: 90%;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-      animation: slideUp 0.3s ease-out;
+    .option-card:hover::before {
+      left: 100%;
     }
     
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .option-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+      border-color: #4a7c59;
     }
     
-    .modal-header {
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      color: white;
-      padding: 25px;
-      border-radius: 15px 15px 0 0;
-      text-align: center;
-    }
-    
-    .modal-header h3 {
-      font-size: 1.5rem;
-      margin-bottom: 8px;
-    }
-    
-    .modal-header p {
-      opacity: 0.9;
-      font-size: 0.95rem;
-    }
-    
-    .modal-body {
-      padding: 30px;
-    }
-    
-    .modal-body .form-group {
+    .option-icon {
+      font-size: 4rem;
       margin-bottom: 20px;
-    }
-    
-    .modal-body label {
       display: block;
+      transition: transform 0.3s ease;
+    }
+    
+    .option-card:hover .option-icon {
+      transform: scale(1.1);
+    }
+    
+    .parcel-card {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    }
+    
+    .parcel-card:hover {
+      border-color: #2196f3;
+    }
+    
+    .food-card {
+      background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%);
+    }
+    
+    .food-card:hover {
+      border-color: #ff9800;
+    }
+    
+    .laundry-card {
+      background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    }
+    
+    .laundry-card:hover {
+      border-color: #9c27b0;
+    }
+    
+    .option-title {
+      font-size: 1.5rem;
       font-weight: 600;
-      margin-bottom: 8px;
-      color: #a5b6d6;
+      color: #2d5016;
+      margin-bottom: 10px;
+    }
+    
+    .option-description {
+      color: #666;
       font-size: 1rem;
+      line-height: 1.5;
     }
     
-    .modal-body .required {
-      color: #dc3545;
+    .footer {
+      background: #f8f9fa;
+      padding: 30px;
+      text-align: center;
+      border-top: 1px solid #e9ecef;
     }
     
-    .modal-body input {
-      width: 100%;
-      padding: 12px 15px;
-      border: 2px solid #e1e1e1;
-      border-radius: 10px;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      background: #fafafa;
+    .footer p {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 15px;
     }
     
-    .modal-body input:focus {
-      outline: none;
-      border-color: #1e3c72;
-      background: white;
-      box-shadow: 0 0 0 3px rgba(30, 60, 114, 0.1);
-    }
-    
-    .modal-body .input-error {
-      border-color: #dc3545 !important;
-      background: #fff5f5 !important;
-    }
-    
-    .modal-body .error-message {
-      color: #dc3545;
-      font-size: 14px;
-      margin-top: 5px;
-      display: none;
-    }
-    
-    .modal-actions {
-      padding: 20px 30px 30px;
+    .contact-info {
       display: flex;
-      gap: 15px;
-      justify-content: flex-end;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
     }
     
-    .modal-actions .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 0.95rem;
-      min-width: 100px;
+    .contact-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #4a7c59;
+      font-weight: 500;
     }
     
-    .modal-actions .btn-cancel {
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #d1d5db;
+    .pulse {
+      animation: pulse 2s infinite;
     }
     
-    .modal-actions .btn-cancel:hover {
-      background: #e5e7eb;
-    }
-    
-    .modal-actions .btn-accept {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: white;
-    }
-    
-    .modal-actions .btn-accept:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
-    }
-    
-    .modal-actions .btn-accept:disabled {
-      background: #d1d5db;
-      color: #9ca3af;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+      100% {
+        transform: scale(1);
+      }
     }
     
     /* Mobile responsiveness */
@@ -742,1532 +234,487 @@
         margin: 10px;
         border-radius: 15px;
       }
+      
       .header {
-        padding: 20px;
+        padding: 30px 20px;
       }
+      
       .header h1 {
-        font-size: 1.6rem; /* was 2rem */
+        font-size: 2rem;
       }
-      .dashboard-content {
-        padding: 20px;
+      
+      .booking-options {
+        padding: 30px 20px;
       }
-
-      /* Ensure 3-in-a-row here as well */
-      .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
-
-      .order-header { flex-direction: column; align-items: flex-start; }
-      .order-actions { flex-direction: column; }
-      .btn { width: 100%; text-align: center; }
-      .refresh-btn { bottom: 20px; right: 20px; width: 50px; height: 50px; }
+      
+      .options-title {
+        font-size: 1.5rem;
+        margin-bottom: 30px;
+      }
+      
+      .options-grid {
+        gap: 20px;
+      }
+      
+      .option-card {
+        padding: 25px 15px;
+      }
+      
+      .option-icon {
+        font-size: 3rem;
+        margin-bottom: 15px;
+      }
+      
+      .option-title {
+        font-size: 1.3rem;
+      }
+      
+      .contact-info {
+        flex-direction: column;
+        gap: 15px;
+      }
     }
     
-    /* Mobile styles for tabs */
-    .orders-tabs {
-      flex-wrap: wrap;
-      gap: 5px;
-    }
-    
-    .tab-button {
-      padding: 10px 15px;
-      font-size: 0.85rem;
-      flex: 1;
-      min-width: auto;
-    }
-    
-    /* Additional mobile improvements for smaller screens */
     @media (max-width: 480px) {
-      .order-header-content {
-        flex-direction: column;
-        gap: 10px;
+      body {
+        padding: 10px;
       }
       
-      .pickup-checkbox-container {
-        margin-top: 10px;
-        align-self: flex-start;
+      .header h1 {
+        font-size: 1.8rem;
       }
       
-      .detail-row {
-        flex-direction: column;
-        gap: 5px;
+      .header p {
+        font-size: 1rem;
       }
       
-      .detail-label {
-        min-width: auto;
-        font-weight: bold;
-      }
-      
-      .order-actions {
-        gap: 8px;
-      }
-      
-      .btn {
-        padding: 12px 16px;
-        font-size: 16px; /* Larger touch targets */
+      .options-grid {
+        grid-template-columns: 1fr;
       }
     }
-
-    /* Rider Active Toggle */
-    .active-toggle {
-      margin: 10px auto 0;
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(255,255,255,0.15);
-      padding: 8px 12px;
-      border-radius: 999px;
-    }
-    .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; inset: 0; background: #d1d5db; transition: .2s; border-radius: 999px; }
-    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; top: 3px; background: white; transition: .2s; border-radius: 50%; }
-    input:checked + .slider { background: #10b981; }
-    input:checked + .slider:before { transform: translateX(20px); }
-
-    /* Rider status dot in cards */
-    .status-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
+    /* Info button */
+    .info-btn {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      background: rgba(0,0,0,0.1);
+      color: #111;
+      border: none;
+      padding: 10px 12px;
       border-radius: 50%;
-      margin-right: 6px;
-      vertical-align: middle;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+      line-height: 1;
     }
-    .status-dot.on { background: #10b981; }
-    .status-dot.off { background: #9ca3af; }
-
-    /* Message area layout (prevent clipping on mobile without full-width button) */
-    .message-row { display: flex; gap: 8px; align-items: stretch; }
-    .message-row .message-input { flex: 1 1 auto; min-width: 0; }
-    .message-row .message-send { flex: 0 0 96px; width: 96px; white-space: nowrap; }
-    @media (max-width: 480px) {
-      .message-row { flex-direction: row; } /* keep in a row on mobile */
-      .message-row .message-send { flex-basis: 84px; width: 84px; padding: 8px 10px; font-size: 0.9rem; }
-    }
-
-    /* Collapsible rider info */
-    .rider-info.hidden { display: none; }
-
-    /* Header actions row */
-    .header-actions { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+    .info-btn:hover { background: rgba(0,0,0,0.15); }
+    /* Info modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index: 2000; }
+    .modal { background:#fff; width: min(720px, 92vw); max-height: 85vh; overflow:auto; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
+    .modal-header { padding:16px 20px; border-bottom:1px solid #eee; display:flex; align-items:center; justify-content:space-between; }
+    .modal-header h3 { margin:0; font-size: 1.2rem; }
+    .modal-body { padding: 16px 20px; color:#333; }
+    .modal-body h4 { margin:16px 0 8px; }
+    .modal-body ul { padding-left: 18px; margin: 8px 0; }
+    .close-btn { background:#eee; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; }
   </style>
 </head>
 <body>
+  <button class="info-btn" onclick="openInfo()" aria-label="How to use">i</button>
   <div class="container">
-    <!-- Header -->
+    <!-- Header Section -->
     <div class="header">
-      <button class="info-btn" onclick="openInfo()" aria-label="How to use">i</button>
-      <h1>Rider Dashboard</h1>
-      <!-- Active toggle under the title -->
-      <div class="active-toggle" title="Toggle your availability">
-        <label class="switch">
-          <input type="checkbox" id="activeSwitch" onchange="onActiveToggle(this.checked)">
-          <span class="slider"></span>
-        </label>
-        <span id="activeLabel" style="font-weight:600;">Inactive</span>
-      </div>
-
-      <!-- Buttons aligned in a single row -->
-      <div class="header-actions">
-        <!-- New: See other riders button -->
-        <button class="btn-view" style="padding:8px 12px;" onclick="showActiveRiders()">See other riders</button>
-        <button id="riderInfoToggle" class="btn-view" style="padding:8px 12px;" onclick="toggleRiderInfo()" aria-expanded="true">
-          Hide rider info
-        </button>
-      </div>
-
-      <p>Manage your deliveries and track orders</p>
-
-      <div class="rider-info">
-        <strong>Rider ID:</strong>
-        <span class="rider-id" id="riderSessionId"></span>
-        <div style="font-size: 12px; margin-top: 5px; opacity: 0.8;">
-          Your unique rider identifier
+      <h1>AUP Grab Booking</h1>
+      <p>Choose your service and get connected with our reliable riders</p>
+    </div>
+    
+    <!-- Booking Options -->
+    <div class="booking-options">
+      <h2 class="options-title">Select Your Service</h2>
+      
+      <div class="options-grid">
+        <!-- Parcel Option -->
+        <div class="option-card parcel-card pulse" onclick="navigateToBooking('parcel')">
+          <div class="option-icon parcel-icon">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+              <path d="m3.3 7 8.7 5 8.7-5"/>
+              <path d="M12 22V12"/>
+            </svg>
+          </div>
+          <h3 class="option-title">Parcel</h3>
+          <p class="option-description">
+            Package delivery and pickup services. Fast and secure delivery to your destination.
+          </p>
         </div>
-        <div style="margin-top: 10px;">
-          <label for="riderNameInput" style="font-size: 14px; font-weight: bold;">Name:</label>
-          <input type="text" id="riderNameInput" placeholder="Enter your name"
-            onchange="updateRiderInfo('name', this.value)"
-            style="width: 100%; margin-top: 5px; padding: 8px; border: 1px solid #ccc; border-radius: 5px;">
+        
+        <!-- Food Option -->
+        <div class="option-card food-card pulse" onclick="navigateToBooking('food')">
+          <div class="option-icon food-icon">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+              <line x1="6" y1="1" x2="6" y2="4"/>
+              <line x1="10" y1="1" x2="10" y2="4"/>
+              <line x1="14" y1="1" x2="14" y2="4"/>
+            </svg>
+          </div>
+          <h3 class="option-title">Food</h3>
+          <p class="option-description">
+            Food delivery from your favorite restaurants. Hot and fresh meals delivered to you.
+          </p>
         </div>
-        <div style="margin-top: 10px;">
-          <label for="riderPhoneInput" style="font-size: 14px; font-weight: bold;">Phone:</label>
-          <input type="tel" id="riderPhoneInput" placeholder="Enter your phone number"
-            onchange="updateRiderInfo('phone', this.value)"
-            style="width: 100%; margin-top: 5px; padding: 8px; border: 1px solid #ccc; border-radius: 5px;">
+        
+        <!-- Laundry Option -->
+        <div class="option-card laundry-card pulse" onclick="navigateToBooking('laundry')">
+          <div class="option-icon laundry-icon">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5Z"/>
+              <path d="M12 5L8 21l4-7 4 7-4-16"/>
+              <path d="M2 21c20 0 20-8 20-8"/>
+            </svg>
+          </div>
+          <h3 class="option-title">Laundry</h3>
+          <p class="option-description">
+            Laundry pickup and delivery service. Clean clothes delivered back to you.
+          </p>
         </div>
       </div>
     </div>
     
-    <!-- Dashboard Content -->
-    <div class="dashboard-content">
-      <!-- Statistics -->
-      <div class="stats-grid" id="statsGrid">
-        <div class="stat-card pending">
-          <div class="stat-number" id="pendingCount">0</div>
-          <div class="stat-label">Available Orders</div>
-        </div>
-        <div class="stat-card assigned">
-          <div class="stat-number" id="assignedCount">0</div>
-          <div class="stat-label">My Active Orders</div>
-        </div>
-        <div class="stat-card completed">
-          <div class="stat-number" id="completedCount">0</div>
-          <div class="stat-label">Completed Today</div>
-        </div>
-      </div>
-      
-      <!-- Orders Navigation Tabs -->
-      <div class="orders-tabs">
-        <button class="tab-button active" onclick="switchTab('available', event)">Available Orders</button>
-        <button class="tab-button" onclick="switchTab('active', event)">Active Orders</button>
-        <button class="tab-button" onclick="switchTab('completed', event)">Completed Today</button>
-        <!-- Added All Orders tab -->
-        <button class="tab-button" onclick="switchTab('all', event)">All Orders</button>
-      </div>
-      
-      <!-- Tab Content Containers -->
-      <div class="tab-content active" id="availableTab">
-        <!-- Available Orders Section -->
-        <div class="orders-section">
-          <h2 class="section-title">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12,6 12,12 16,14"/>
-            </svg>
-            Available Orders
-          </h2>
-          <div class="orders-grid" id="availableOrders">
-            <div class="loading">
-              <div class="loading-spinner"></div>
-              <div>Loading available orders...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="tab-content" id="activeTab">
-        <!-- Active Orders Section -->
-        <div class="orders-section">
-          <h2 class="section-title">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="m22 2-5 10-5-5 10-5z"/>
-            </svg>
-            Active Orders
-          </h2>
-          <div class="orders-grid" id="activeOrders">
-            <div class="loading">
-              <div class="loading-spinner"></div>
-              <div>Loading your active orders...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="tab-content" id="completedTab">
-        <!-- Completed Today Section -->
-        <div class="orders-section">
-        <h2 class="section-title">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="16,8 12,12 8,16"/>
-            <polyline points="16,16 12,12 8,8"/>
+    <!-- Footer -->
+    <div class="footer">
+      <p>Available daily for your convenience</p>
+      <div class="contact-info">
+        <div class="contact-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 1 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 1 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
-          Completed Today
-        </h2>
-        <div class="orders-grid" id="completedTodayOrders">
-          <div class="loading">
-            <div class="loading-spinner"></div>
-            <div>Loading your completed orders...</div>
-          </div>
+          <span>Support: 0992-278-8477</span>
         </div>
-      </div>
-    </div>
-
-    <!-- New: All Orders Tab -->
-    <div class="tab-content" id="allTab">
-      <div class="orders-section">
-        <h2 class="section-title">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="contact-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
-            <path d="M8 12h8M12 8v8"/>
+            <polyline points="12,6 12,12 16,14"/>
           </svg>
-          All Orders
-        </h2>
-        <div class="orders-grid" id="allOrders">
-          <div class="loading">
-            <div class="loading-spinner"></div>
-            <div>Loading all orders...</div>
-          </div>
+          <span>Daily Service</span>
         </div>
-      </div>
-    </div>
-  
-  <!-- Info Modal -->
-  <div id="infoModal" class="modal-overlay" onclick="overlayClick(event)">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-      <div class="modal-header">
-        <h3 id="infoTitle">How to use Rider Dashboard</h3>
-        <button class="close-btn" onclick="closeInfo()">Close</button>
-      </div>
-      <div class="modal-body">
-        <h4>Quick Start</h4>
-        <ul>
-          <li>Check Available Orders and accept ones you can fulfill.</li>
-          <li>After acceptance, your orders move to My Orders (sorted by latest assigned).</li>
-        </ul>
-        <h4>FAQs</h4>
-        <ul>
-          <li><strong>Where do I see pickup details?</strong> In the order card, including any customer notes and parcel breakdowns.</li>
-          <li><strong>How to contact the customer?</strong> Use the Send message section on assigned orders.</li>
-          <li><strong>How to complete an order?</strong> Click "Mark as Delivered" after successful delivery.</li>
-          <li><strong>Phone number shown to user?</strong> The number you provide when accepting will be shown to the customer.</li>
-          <li><strong>Auto-refresh?</strong> The dashboard refreshes periodically; use the floating refresh button anytime.</li>
-        </ul>
+        <div class="contact-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"/>
+          </svg>
+          <span>Fast Delivery</span>
+        </div>
       </div>
     </div>
   </div>
   
-  <!-- Refresh Button -->
-  <button class="refresh-btn" onclick="refreshDashboard()" title="Refresh Dashboard">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="23,4 23,10 17,10"/>
-      <polyline points="1,20 1,14 7,14"/>
-      <path d="m3.51,9a9,9,0,0,1,14.85-3.36L23,10M1,14l4.64,4.36A9,9,0,0,0,20.49,15"/>
-    </svg>
-  </button>
-  
-  <!-- Notification -->
-  <div class="notification" id="notification"></div>
-  
-  <!-- Add audio element for notification sound -->
-  <audio id="notificationSound" preload="auto">
-    <source src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=notification-sound-7062.mp3" type="audio/mpeg">
-  </audio>
-  
-  <script>
-    // Fallback if notification-service.js failed to load
-    if (typeof RiderNotificationService === 'undefined') {
-      console.warn('RiderNotificationService not loaded, creating fallback');
-      window.RiderNotificationService = {
-        pollRiderNotifications: function(url, since) {
-          return Promise.resolve([]);
-        },
-        showRiderNotifications: function(notifications) {
-          // Do nothing
-        }
-      };
-    }
-  </script>
+  <!-- Rider Availability Modal (shown first if no active riders) -->
+  <div id="riderAvailabilityModal" class="modal-overlay" style="display:none;">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="riderAvailabilityTitle">
+      <div class="modal-header">
+        <h3 id="riderAvailabilityTitle">Checking for available Riders</h3>
+      </div>
+      <div class="modal-body">
+        <p id="availabilityMain">No available rider at the moment. Please try again later.</p>
+        <p id="availabilitySub" style="color:#666; font-size:0.95rem; margin-top:6px;"></p>
+      </div>
+      <div class="modal-actions" style="padding:16px 20px 20px; display:flex; justify-content:flex-end; gap:8px;">
+        <button class="close-btn" onclick="retryAvailability()">Retry</button>
+        <button class="close-btn" onclick="closeAvailabilityModal()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New: Instructions Modal (shown on every open) -->
+  <div id="instructionsModal" class="modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="instructionsTitle">
+      <div class="modal-header">
+        <h3 id="instructionsTitle">Instructions</h3>
+      </div>
+      <div class="modal-body">
+        <ul>
+          <li>Open this site in your browser.</li>
+          <li>Keep track of your booking.</li>
+          <li>Ensure your phone has a signal — the rider will contact you there.</li>
+          <li>Always confirm delivery once your booking is completed.</li>
+          <li>If you reload the site, please wait — your booking will reappear shortly.</li>
+        </ul>
+      </div>
+      <div class="modal-actions" style="padding:16px 20px 20px; display:flex; justify-content:flex-end;">
+        <button class="close-btn" onclick="closeInstructions()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Modal -->
+  <div id="infoModal" class="modal-overlay" onclick="overlayClick(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <div class="modal-header">
+        <h3 id="infoTitle">How to use AUP Grab</h3>
+        <button class="close-btn" onclick="closeInfo()">Close</button>
+      </div>
+      <div class="modal-body">
+        <h4>What is this?</h4>
+        <ul>
+          <li>A unified portal for booking Food, Parcel, and Laundry delivery.</li>
+        </ul>
+        <h4>How to start?</h4>
+        <ul>
+          <li>Choose a service (Food, Parcel, Laundry), fill in details, submit, and track with your Order ID.</li>
+        </ul>
+        <h4>FAQs</h4>
+        <ul>
+          <li><strong>Tracking?</strong> Each service page shows status and rider info when assigned.</li>
+          <li><strong>Messaging?</strong> Riders can send you messages after they accept.</li>
+          <li><strong>Payment?</strong> Follow on-screen instructions. Some services allow cash collection.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // REPLACE WITH YOUR GOOGLE APP SCRIPT URL
+    // Add backend URL and a booking gate
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzv69YVjiAxzYteFo7tl4LGVecznj35_kRYY4_Eca3IPmAnOouSQgTIwTqdXESQOrEP2A/exec';
+    let bookingAllowed = false;
     
-    let riderSessionId = null;
-    let refreshInterval = null;
-    let allOrders = [];
-    let previousOrderIds = []; // Track previous order IDs to detect new ones
-    let isTypingMessage = false;
-    let lastNotificationCheck = Date.now(); // Track last notification check time
-    const draftMessages = {}; // orderId -> draft text
-    const sendingMessage = {}; // orderId -> boolean (in-flight lock)
-    // New: in-memory map of rider statuses
-    let riderStatuses = {}; // rider_id -> { active: boolean, name, phone, last_updated }
-    let myActive = false;
+    // Add debug flag for troubleshooting rider issues (set to true temporarily if needed)
+    const DEBUG_RIDER_CHECK = false;
     
-    // Make sure we initialize pickedUpOrders safely
-    const pickedUpOrders = new Set();
-    try {
-      const savedPickedUp = localStorage.getItem('pickedUpOrders');
-      if (savedPickedUp) {
-        JSON.parse(savedPickedUp).forEach(id => pickedUpOrders.add(id));
+    // Add admin override for emergencies (e.g. ?admin=true in URL)
+    const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
+
+    // Consider rider status stale after this TTL (ms)
+    const RIDER_ACTIVE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+    // Helpers to normalize Google Sheet values
+    function toBool(v) {
+      if (typeof v === 'boolean') return v;
+      if (typeof v === 'number') return v === 1;
+      if (typeof v === 'string') {
+        const s = v.trim().toLowerCase();
+        return s === '1' || s === 'true' || s === 'yes' || s === 'y';
       }
-    } catch (e) {
-      console.warn('Error loading picked up orders', e);
+      return false;
     }
     
-    // Initialize rider info safely
-    let riderInfo = {
-      name: '',
-      phone: ''
-    };
-    try {
-      riderInfo.name = localStorage.getItem('riderName') || '';
-      riderInfo.phone = localStorage.getItem('riderPhone') || '';
-    } catch (e) {
-      console.warn('Error loading rider info', e);
-    }
-    
-    // Initialize claimed orders safely
-    let claimedOrders = [];
-    try {
-      const savedClaimedOrders = localStorage.getItem('claimedOrders');
-      if (savedClaimedOrders) {
-        claimedOrders = JSON.parse(savedClaimedOrders);
-      }
-    } catch (e) {
-      console.warn('Error loading claimed orders', e);
-      localStorage.setItem('claimedOrders', JSON.stringify([]));
-    }
-    
-    // Initialize dashboard
-    window.onload = function() {
-      console.log('Initializing rider dashboard...');
+    function isFresh(ts) {
+      if (!ts) return true; // if no timestamp, assume fresh
       try {
-        initializeRiderSession();
-        // Initialize toggle from localStorage then sync with backend
-        initActiveToggle();
-        loadDashboard();
-        startAutoRefresh();
-        // Refresh faster when rider returns to the tab or regains network
-        window.addEventListener('focus', () => loadDashboard());
-        document.addEventListener('visibilitychange', () => {
-          if (!document.hidden) loadDashboard();
-        });
-        window.addEventListener('online', () => loadDashboard());
-        checkNotificationPermission();
+        const t = new Date(ts).getTime();
+        if (isNaN(t)) return true;
+        return (Date.now() - t) <= RIDER_ACTIVE_TTL_MS;
+      } catch(e) {
+        console.warn("Error parsing timestamp:", e);
+        return true; // Assume fresh on parse error
+      }
+    }
 
-        // NEW: populate header inputs from localStorage (no literal ${...} shown)
-        try {
-          const nameEl = document.getElementById('riderNameInput');
-          const phoneEl = document.getElementById('riderPhoneInput');
-          if (nameEl) nameEl.value = localStorage.getItem('riderName') || '';
-          if (phoneEl) phoneEl.value = localStorage.getItem('riderPhone') || '';
-        } catch (_) {}
-        // NEW: apply saved visibility for rider info
-        initializeRiderInfoToggle();
-      } catch (e) {
-        console.error('Error initializing dashboard:', e);
-        alert('There was an error loading the dashboard. Please refresh the page and try again.');
-      }
-    };
-    
-    function initializeRiderSession() {
-      riderSessionId = localStorage.getItem('riderSessionId');
-      if (!riderSessionId) {
-        riderSessionId = generateRiderSessionId();
-        localStorage.setItem('riderSessionId', riderSessionId);
-      }
-      document.getElementById('riderSessionId').textContent = riderSessionId;
-    }
-    
-    function generateRiderSessionId() {
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 10000);
-      return `RIDER-${timestamp}-${random}`;
-    }
-    
-    function loadDashboard() {
-      loadAllOrders();
-    }
-    
-    function loadAllOrders() {
-      const ts = Date.now();
-      fetch(`${SCRIPT_URL}?action=get_all_bookings&ts=${ts}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            // Check for new orders before updating allOrders
-            const newOrders = checkForNewOrders(data.bookings);
-            
-            // If new orders detected, play notification sound
-            if (newOrders.length > 0) {
-              playNotificationSound();
-              console.log('New bookings detected:', newOrders.map(o => `${o.booking_type}: ${o.order_id}`));
-            }
-            
-            // Update all orders
-            allOrders = data.bookings;
-            updateStatistics();
-            displayAvailableOrders();
-            displayActiveOrders();
-            displayCompletedTodayOrders();
-            // Load rider statuses, then render All Accepted Orders with status dots
-            loadRiderStatuses().then(() => {
-              displayAllOngoingOrders();
-            });
-          } else {
-            showNotification('Error loading orders: ' + data.message, 'error');
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          showNotification('Error loading orders. Please try again.', 'error');
-        });
-    }
-    
-    // Function to check for new orders by comparing with previous state
-    function checkForNewOrders(currentOrders) {
-      // Get pending orders
-      const pendingOrders = currentOrders.filter(order => order.status === 'pending');
-      
-      // Get current order IDs
-      const currentOrderIds = pendingOrders.map(order => order.order_id);
-      
-      // Find new orders (in current but not in previous)
-      const newOrders = pendingOrders.filter(order => !previousOrderIds.includes(order.order_id));
-      
-      // Update previous order IDs for next check
-      previousOrderIds = currentOrderIds;
-      
-      return newOrders;
-    }
-    
-    function updateStatistics() {
-      const pendingOrders = allOrders.filter(order => order.status === 'pending');
-      const activeOrders = allOrders.filter(order => order.rider_id === riderSessionId && order.status === 'assigned');
-      const completedToday = allOrders.filter(order => {
-        if (order.rider_id === riderSessionId && order.status === 'completed' && order.completed_at) {
-          const completedDate = new Date(order.completed_at);
-          const today = new Date();
-          return completedDate.toDateString() === today.toDateString();
-        }
-        return false;
-      });
-      
-      document.getElementById('pendingCount').textContent = pendingOrders.length;
-      document.getElementById('assignedCount').textContent = activeOrders.length;
-      document.getElementById('completedCount').textContent = completedToday.length;
-    }
-    
-    function displayAvailableOrders() {
-      const availableOrders = allOrders
-        .filter(order => order.status === 'pending')
-        // Oldest first so most recent is at the bottom
-        .sort((a, b) => (new Date(a.created_at || 0)) - (new Date(b.created_at || 0)));
-      const container = document.getElementById('availableOrders');
-      
-      if (availableOrders.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
-            <h3>No Available Orders</h3>
-            <p>All orders have been assigned. Check back later for new orders.</p>
-          </div>
-        `;
-        return;
-      }
-      
-      container.innerHTML = availableOrders.map(order => createOrderCard(order, true)).join('');
-    }
-    
-    function displayActiveOrders() {
-      const activeOrders = allOrders
-        .filter(order => order.rider_id === riderSessionId && order.status === 'assigned')
-        // Latest accepted at top; fallback to created_at
-        .sort((a, b) => (new Date(b.assigned_at || b.created_at || 0)) - (new Date(a.assigned_at || a.created_at || 0)));
-      const container = document.getElementById('activeOrders');
-      
-      if (activeOrders.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="m22 2-5 10-5-5 10-5z"/>
-            </svg>
-            <h3>No Active Orders</h3>
-            <p>Accept orders from the available orders section to start delivering.</p>
-          </div>
-        `;
-        return;
-      }
-      
-      container.innerHTML = activeOrders.map(order => createOrderCard(order, false)).join('');
-      // Reattach input listeners and restore drafts
-      attachMessageInputHandlers();
-    }
-    
-    function displayCompletedTodayOrders() {
-      const completedTodayOrders = allOrders
-        .filter(order => {
-          if (order.rider_id === riderSessionId && order.status === 'completed' && order.completed_at) {
-            const completedDate = new Date(order.completed_at);
-            const today = new Date();
-            return completedDate.toDateString() === today.toDateString();
-          }
-          return false;
-        })
-        // Latest completed first
-        .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at));
-      const container = document.getElementById('completedTodayOrders');
-      
-      if (completedTodayOrders.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="16,8 12,12 8,16"/>
-              <polyline points="16,16 12,12 8,8"/>
-            </svg>
-            <h3>No Completed Orders Today</h3>
-            <p>You haven't completed any orders today yet.</p>
-          </div>
-        `;
-        return;
-      }
-      
-      container.innerHTML = completedTodayOrders.map(order => createOrderCard(order, false)).join('');
-    }
-    
-    // New: render all accepted orders (assigned) for today only
-    function displayAllOngoingOrders() {
+    // Check rider availability via backend reading Google Sheet
+    async function checkRidersActive() {
       try {
-        const orders = (allOrders || [])
-          .slice()
-          .sort((a, b) => {
-            const ta = new Date(a.assigned_at || a.created_at || 0).getTime();
-            const tb = new Date(b.assigned_at || b.created_at || 0).getTime();
-            return tb - ta;
-          });
-
-        const container = document.getElementById('allOrders');
-
-        if (!orders.length) {
-          container.innerHTML = `
-            <div class="empty-state">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="m9 12 2 2 4-4"/>
-              </svg>
-              <h3>No Orders</h3>
-              <p>There are no bookings to display.</p>
-            </div>
-          `;
-          return;
-        }
-
-        // Read-only cards (no control buttons/checkbox/message)
-        container.innerHTML = orders.map(order => createOrderCard(order, false, true)).join('');
-      } catch (e) {
-        console.error('displayAllOngoingOrders error', e);
-        const container = document.getElementById('allOrders');
-        if (container) container.innerHTML = '<div class="empty-state">Failed to load orders.</div>';
-      }
-    }
-    
-    function createOrderCard(order, isAvailable, readOnly = false) {
-      try {
-        const details = order.booking_details;
-        const useAssigned = (!isAvailable && order.status === 'assigned');
-        const ts = useAssigned ? (order.assigned_at || order.created_at) : order.created_at;
-        const createdDate = ts ? new Date(ts).toLocaleString() : 'N/A';
-        const timeLabel = useAssigned ? 'Assigned' : 'Created';
+        if (DEBUG_RIDER_CHECK) console.log("Checking rider availability...");
         
-        // Check if this order was previously claimed or has claimed status in database
-        let wasClaimedByThisRider = false;
-        try {
-          const claimedOrders = JSON.parse(localStorage.getItem('claimedOrders') || '[]');
-          wasClaimedByThisRider = claimedOrders.includes(order.order_id);
-        } catch (e) {
-          console.warn('Error checking claimed status', e);
+        const res = await fetch(`${SCRIPT_URL}?action=get_rider_statuses&ts=${Date.now()}`, { 
+          cache: 'no-cache',
+          timeout: 8000 // Add timeout to prevent hanging forever
+        });
+        
+        if (!res.ok) {
+          if (DEBUG_RIDER_CHECK) console.warn(`API returned status ${res.status}`);
+          return { ok: false, anyActive: false, err: `API error: ${res.status}` };
         }
         
-        const isItemClaimed = order.delivery_status === 'item_claimed' || order.delivery_status === 'claimed';
-        const isDeliveredByRider = order.delivery_status === 'delivered_by_rider';
-        const isAwaitingCustomerConfirmation = isDeliveredByRider && order.status !== 'completed';
-        
-        let actionButtons = '';
-        if (!readOnly) {
-          if (isAvailable) {
-            // Block accepting when not active: show reminder instead
-            if (!myActive) {
-              actionButtons = `
-                <button class="btn btn-accept" onclick="remindActivate()" title="Switch to Active first">
-                  Accept Order
-                </button>
-              `;
-            } else {
-              actionButtons = `
-                <button class="btn btn-accept" onclick="acceptOrder('${order.order_id}')">
-                  Accept Order
-                </button>
-              `;
-            }
-          } else if (order.status === 'assigned') {
-            if (order.rider_id === riderSessionId) {
-              if (isAwaitingCustomerConfirmation) {
-                actionButtons = `
-                  <button class="btn btn-complete" disabled style="background:#888; opacity:0.8;">
-                    Awaiting Customer Confirmation
-                  </button>
-                `;
-              } else if (wasClaimedByThisRider || isItemClaimed) {
-                actionButtons = `
-                  <button class="btn btn-complete" onclick="markAsDelivered(this,'${order.order_id}')">
-                    Mark as Delivered
-                  </button>
-                `;
-              } else {
-                actionButtons = `
-                  <button class="btn btn-accept" onclick="markItemClaimed(this,'${order.order_id}')">
-                    Item Claimed
-                  </button>
-                `;
-              }
-            } else {
-              actionButtons = ''; // view-only for orders assigned to other riders
-            }
+        const data = await res.json();
+        if (DEBUG_RIDER_CHECK) console.log("Rider API response:", data);
+
+        // Accept both map and array shapes
+        let entries = [];
+        if (data && data.success) {
+          if (Array.isArray(data.riders)) {
+            entries = data.riders;
+          } else if (data.riders && typeof data.riders === 'object') {
+            entries = Object.values(data.riders);
           }
-        }
-        
-        // Add call button for assigned (active) orders - only if this is my order
-        let callBtn = '';
-        if (!readOnly && !isAvailable && order.status === 'assigned' && order.customer_phone && order.rider_id === riderSessionId) {
-          callBtn = `
-            <a class="btn btn-accept" style="background:linear-gradient(135deg,#fbbf24,#f59e42);" href="tel:${order.customer_phone}">
-              📞 Call Customer
-            </a>
-          `;
-        }
-        
-        // Add checkbox for active orders - only for my assigned orders
-        let pickupCheckbox = '';
-        if (!readOnly && !isAvailable && order.status === 'assigned' && order.rider_id === riderSessionId) {
-          const isChecked = pickedUpOrders.has(order.order_id) ? 'checked' : '';
-          pickupCheckbox = `
-            <div class="pickup-checkbox-container">
-              <label class="checkbox-container">
-                <input type="checkbox" id="pickup-${order.order_id}" onchange="togglePickupStatus('${order.order_id}')" ${isChecked}>
-                <span class="checkmark"></span>
-                <span style="margin-left: 5px; font-size: 14px;">Picked Up</span>
-              </label>
-            </div>
-          `;
-        }
-        
-        // Check for both possible payment method field names
-        const paymentMethod = order.payment_method || order.paymentMethod;
-        
-        // Debug the payment details to see what's coming from the server
-        console.log('Order payment details:', {
-          orderId: order.order_id,
-          status: order.payment_status,
-          amount: order.payment_amount,
-          method: paymentMethod
-        });
-        
-        // Evaluate rider active status (visible to all riders)
-        const riderInfo = (order.rider_id || order.rider_name) ? (riderStatuses[order.rider_id] || null) : null;
-        const riderIsActive = riderInfo ? !!riderInfo.active : false;
-        
-        return `
-          <div class="order-card ${order.status}" data-order-id="${order.order_id}" id="orderCard-${order.order_id}">
-            <div class="order-header">
-              <div class="order-header-content">
-                <div class="order-info">
-                  <div class="order-id">${order.order_id}</div>
-                  <div style="margin-top: 5px;">
-                    <span class="order-type ${order.booking_type}">${order.booking_type}</span>
-                    <span class="order-status ${order.status}">${order.status}</span>
-                  </div>
-                </div>
-                ${pickupCheckbox}
-              </div>
-            </div>
-            
-            <div class="order-details">
-              <div class="detail-row">
-                <span class="detail-label">Customer:</span>
-                <span class="detail-value">${order.customer_name}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Phone:</span>
-                <span class="detail-value">${order.customer_phone}</span>
-              </div>
-              ${ (order.rider_name || order.rider_id) ? `
-                <div class="detail-row">
-                  <span class="detail-label">Rider:</span>
-                  <span class="detail-value">
-                    <span class="status-dot ${riderIsActive ? 'on' : 'off'}"></span>
-                    ${order.rider_name || 'Unknown'}${order.rider_id ? ` (${order.rider_id})` : ''} - ${riderIsActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              ` : '' }
-              ${order.booking_type === 'food' ? `
-                <div class="detail-row">
-                  <span class="detail-label">Pickup:</span>
-                  <span class="detail-value">${details.pickupLocation || 'N/A'}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Items:</span>
-                  <span class="detail-value">${details.itemIdentity || 'N/A'}</span>
-                </div>
-              ` : ''}
-              ${order.booking_type === 'parcel' ? `
-                <div class="detail-row">
-                  <span class="detail-label">Quantity:</span>
-                  <span class="detail-value">${details.quantity || 1} package(s)</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Pickup from:</span>
-                  <span class="detail-value">${details.pickupPerson || 'N/A'}</span>
-                </div>
-              ` : ''}
-              ${order.booking_type === 'laundry' ? `
-                <div class="detail-row">
-                  <span class="detail-label">Pickup:</span>
-                  <span class="detail-value">${details.pickupLocation || 'N/A'}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Basket:</span>
-                  <span class="detail-value">${details.basketName || 'N/A'}</span>
-                </div>
-              ` : ''}
-              <div class="detail-row">
-                <span class="detail-label">Delivery:</span>
-                <span class="detail-value">${details.deliveryLocation || 'N/A'}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Payment:</span>
-                <span class="detail-value">
-                  ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
-                    ` (₱${order.payment_amount} - ${paymentMethod || 'Cash'})` : ''}
-                </span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">${timeLabel}:</span>
-                <span class="detail-value">${createdDate}</span>
-              </div>
-              ${details.notes ? `
-                <div class="detail-row">
-                  <span class="detail-label">Notes:</span>
-                  <span class="detail-value">${details.notes}</span>
-                </div>
-              ` : ''}
-            </div>
-            
-            <div class="order-actions">
-              ${actionButtons}
-              ${callBtn}
-              <button class="btn btn-view" onclick="viewOrderDetails('${order.order_id}')">
-                View Details
-              </button>
-            </div>
-            ${(!readOnly && order.status === 'assigned' && order.rider_id === riderSessionId) ? `
-              <div style="margin-top:12px; padding-top:12px; border-top:1px solid #e5e7eb;">
-                <div style="font-weight:600; color:#1e3c72; margin-bottom:6px;">Send message to customer</div>
-                <div class="message-row" style="display:flex; gap:8px;">
-                  <input class="message-input" id="messageInput-${order.order_id}" type="text" placeholder="Type a message..." style="flex:1; padding:8px 10px; border:1px solid #d1d5db; border-radius:8px;" value="${(draftMessages[order.order_id] || '').replace(/"/g, '&quot;')}" />
-                  <button class="btn btn-accept message-send" id="messageSendBtn-${order.order_id}" onclick="sendMessage('${order.order_id}')">Send</button>
-                </div>
-                <div id="messageInfo-${order.order_id}" style="font-size:12px; color:#6b7280; margin-top:6px;"></div>
-              </div>
-            ` : ''}
-          </div>
-        `;
-      } catch (e) {
-        console.error('Error creating order card:', e, order);
-        return `<div class="order-card error">Error displaying order ${order.order_id || 'unknown'}</div>`;
-      }
-    }
-    
-    function attachMessageInputHandlers() {
-      const inputs = document.querySelectorAll('input[id^="messageInput-"]');
-      inputs.forEach(inp => {
-        const oid = inp.id.replace('messageInput-', '');
-        // Restore from draft store in case value attr was escaped
-        if (typeof draftMessages[oid] === 'string' && inp.value !== draftMessages[oid]) {
-          inp.value = draftMessages[oid];
-        }
-        inp.addEventListener('input', () => {
-          draftMessages[oid] = inp.value;
-        });
-        inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            sendMessage(oid);
-          }
-        });
-        inp.addEventListener('focus', () => {
-          isTypingMessage = true;
-          if (refreshInterval) clearInterval(refreshInterval);
-        });
-        inp.addEventListener('blur', () => {
-          isTypingMessage = false;
-          startAutoRefresh();
-        });
-      });
-    }
-    
-    function updateRiderInfo(field, value) {
-      if (field === 'name') {
-        localStorage.setItem('riderName', value.trim());
-      } else if (field === 'phone') {
-        localStorage.setItem('riderPhone', value.trim());
-      }
-      showNotification('Rider information updated successfully!');
-    }
-
-    function acceptOrder(orderId) {
-      // Block if not active
-      if (!myActive) {
-        showNotification('Turn Active ON to accept bookings.', 'error');
-        return;
-      }
-
-      const riderName = localStorage.getItem('riderName');
-      const riderPhone = localStorage.getItem('riderPhone');
-
-      if (!riderName || !riderPhone) {
-        alert('Please fill in your name and phone number before accepting an order.');
-        return;
-      }
-
-      const requestData = {
-        action: 'assign_rider',
-        order_id: orderId,
-        rider_id: riderSessionId,
-        rider_name: riderName,
-        rider_phone: riderPhone
-      };
-
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify(requestData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showNotification('Order accepted successfully!');
-          loadDashboard();
         } else {
-          showNotification('Error accepting order: ' + data.message, 'error');
+          if (DEBUG_RIDER_CHECK) console.warn("API returned success: false");
+          return { ok: false, anyActive: false, err: data.message || "API returned success: false" };
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        showNotification('Error accepting order. Please try again.', 'error');
-      });
+        
+        if (DEBUG_RIDER_CHECK) console.log(`Found ${entries.length} rider entries`);
+        
+        // Evaluate active + freshness for each rider
+        const activeRiders = entries.filter(r => {
+          const isActive = toBool(r?.active);
+          const timestampFresh = isFresh(r?.last_updated);
+          if (DEBUG_RIDER_CHECK) {
+            console.log(`Rider ${r?.name || '(unknown)'}: active=${isActive}, fresh=${timestampFresh}`);
+          }
+          return isActive && timestampFresh;
+        });
+        
+        const anyActive = activeRiders.length > 0;
+        if (DEBUG_RIDER_CHECK) console.log(`Active riders: ${activeRiders.length}`);
+        
+        // Special case: Always allow booking if there are entries but none are officially active
+        // This is a fallback to prevent service outage if status updates are failing
+        const fallbackActivation = entries.length > 0 && activeRiders.length === 0 && isAdmin;
+        
+        return { 
+          ok: true, 
+          anyActive: anyActive || fallbackActivation,
+          fallback: fallbackActivation,
+          riderCount: entries.length,
+          activeCount: activeRiders.length
+        };
+      } catch (e) {
+        console.error("Error checking rider availability:", e);
+        // Admin bypass: if admin, allow booking even on error
+        return { 
+          ok: false, 
+          anyActive: isAdmin, // Allow admin to bypass on error
+          adminBypass: isAdmin,
+          err: e 
+        };
+      }
     }
 
-    // Send a simplex message to the user for a given order
-    function sendMessage(orderId) {
-      const input = document.getElementById(`messageInput-${orderId}`);
-      const info = document.getElementById(`messageInfo-${orderId}`);
-      const btn = document.getElementById(`messageSendBtn-${orderId}`);
-      if (!input) return;
-      if (sendingMessage[orderId]) return; // prevent duplicate in-flight
-      const text = (input.value || '').trim();
-      if (!text) {
-        if (info) info.textContent = 'Please type a message first.';
-        return;
-      }
-      sendingMessage[orderId] = true;
-      if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
-      const payload = {
-        action: 'send_message',
-        order_id: orderId,
-        sender_type: 'rider',
-        sender_id: riderSessionId,
-        text
-      };
-      // Use text/plain to avoid preflight; Apps Script supports JSON parse fallback in backend
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          input.value = '';
-          draftMessages[orderId] = '';
-          if (info) info.textContent = 'Message sent.';
-          showNotification('Message sent');
-        } else {
-          const msg = data.message || 'Failed to send message';
-          if (info) info.textContent = msg;
-          showNotification(msg, 'error');
-        }
-      })
-      .catch(err => {
-        console.error('sendMessage error', err);
-        if (info) info.textContent = 'Network error sending message';
-        showNotification('Network error sending message', 'error');
-      })
-      .finally(() => {
-        sendingMessage[orderId] = false;
-        if (btn) { btn.disabled = false; btn.textContent = 'Send'; }
-      });
-    }
-    
-    function showRiderInfoModal(orderId) {
-      const modal = document.createElement('div');
-      modal.className = 'modal-overlay show';
-      modal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>Enter Your Information</h3>
-            <p>Please provide your details to accept this order</p>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="riderNameInput">Your Full Name <span class="required">*</span></label>
-              <input type="text" id="riderNameInput" placeholder="Enter your full name" value="${riderInfo.name}" required>
-              <div class="error-message" id="nameInputError">Please enter your full name</div>
-            </div>
-            <div class="form-group">
-              <label for="riderPhoneInput">Your Phone Number <span class="required">*</span></label>
-              <input type="tel" id="riderPhoneInput" placeholder="09123456789" value="${riderInfo.phone}" required>
-              <div class="error-message" id="phoneInputError">Please enter a valid phone number</div>
-            </div>
-          </div>
-          <div class="modal-actions">
-            <button class="btn btn-cancel" onclick="closeRiderInfoModal()">Cancel</button>
-            <button class="btn btn-accept" onclick="submitRiderInfo('${orderId}')">Accept Order</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-      
+    // Show rider availability modal (with optional message)
+    function showAvailabilityModal(message, subNote) {
+      const modal = document.getElementById('riderAvailabilityModal');
+      if (!modal) return;
+      const main = document.getElementById('availabilityMain');
+      const sub = document.getElementById('availabilitySub');
+      if (message) main.textContent = message;
+      if (sub) sub.textContent = subNote || '';
+      modal.style.display = 'flex';
       setTimeout(() => {
-        document.getElementById('riderNameInput').focus();
-      }, 100);
-      
-      modal.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-          submitRiderInfo(orderId);
-        } else if (e.key === 'Escape') {
-          closeRiderInfoModal();
-        }
-      });
-    }
-    
-    function closeRiderInfoModal() {
-      const modal = document.querySelector('.modal-overlay');
-      if (modal) {
-        modal.remove();
-      }
-    }
-    
-    function submitRiderInfo(orderId, name = null, phone = null) {
-      if (!myActive) {
-        showNotification('Please switch to Active before accepting bookings.', 'error');
-        return;
-      }
-
-      const riderName = name || document.getElementById('riderNameInput').value.trim();
-      const riderPhone = phone || document.getElementById('riderPhoneInput').value.trim();
-
-      document.querySelectorAll('.modal-content .error-message').forEach(msg => msg.style.display = 'none');
-      document.querySelectorAll('.modal-content .input-error').forEach(input => input.classList.remove('input-error'));
-
-      let isValid = true;
-
-      if (!riderName) {
-        showModalError('riderNameInput', 'nameInputError', 'Please enter your full name');
-        isValid = false;
-      }
-
-      if (!riderPhone || riderPhone.length < 10) {
-        showModalError('riderPhoneInput', 'phoneInputError', 'Please enter a valid phone number');
-        isValid = false;
-      }
-
-      if (!isValid) {
-        return;
-      }
-
-      localStorage.setItem('riderName', riderName);
-      localStorage.setItem('riderPhone', riderPhone);
-      riderInfo.name = riderName;
-      riderInfo.phone = riderPhone;
-
-      if (!name && !phone) {
-        const acceptBtn = document.querySelector('.btn-accept');
-        acceptBtn.disabled = true;
-        acceptBtn.textContent = 'Accepting...';
-      }
-
-      const requestData = {
-        action: 'assign_rider',
-        order_id: orderId,
-        rider_id: riderSessionId,
-        rider_name: riderName,
-        rider_phone: riderPhone
-      };
-
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8',
-        },
-        body: JSON.stringify(requestData)
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            closeRiderInfoModal();
-            showNotification('Order accepted successfully!');
-            loadDashboard();
-          } else {
-            showNotification('Error accepting order: ' + data.message, 'error');
-            if (!name && !phone) {
-              const acceptBtn = document.querySelector('.btn-accept');
-              acceptBtn.disabled = false;
-              acceptBtn.textContent = 'Accept Order';
-            }
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          showNotification('Error accepting order. Please try again.', 'error');
-          if (!name && !phone) {
-            const acceptBtn = document.querySelector('.btn-accept');
-            acceptBtn.disabled = false;
-            acceptBtn.textContent = 'Accept Order';
-          }
-        });
-    }
-    
-    function showModalError(inputId, errorId, message) {
-      document.getElementById(inputId).classList.add('input-error');
-      const errorElement = document.getElementById(errorId);
-      errorElement.textContent = message;
-      errorElement.style.display = 'block';
-    }
-    
-    function markAsDelivered(btn, orderId) {
-      // disable clicked button immediately
-      try {
-        if (btn) {
-          btn.disabled = true;
-          btn.dataset.origText = btn.textContent;
-          btn.textContent = 'Processing...';
-        } else {
-          // fallback: try to find the button
-          btn = document.querySelector(`#orderCard-${orderId} .btn-complete`);
-          if (btn) { btn.disabled = true; btn.dataset.origText = btn.textContent; btn.textContent = 'Processing...'; }
-        }
-
-        if (!confirm('Are you sure you want to mark this order as delivered? This will notify the customer to confirm receipt.')) {
-          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Mark as Delivered'; }
-          return;
-        }
-
-        const requestData = {
-          action: 'updateDeliveryStatus',
-          order_id: orderId,
-          status: 'delivered_by_rider'
-        };
-
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(requestData)
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            showNotification('Order marked as delivered! Awaiting customer confirmation.');
-            
-            // Update button to show "Awaiting Customer Confirmation"
-            if (btn) {
-              btn.disabled = true;
-              btn.textContent = 'Awaiting Customer Confirmation';
-              btn.style.background = '#888';
-              btn.style.opacity = '0.8';
-            }
-            
-            // Refresh dashboard to update the UI
-            loadDashboard();
-          } else {
-            showNotification('Error marking as delivered: ' + data.message, 'error');
-            if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Mark as Delivered'; }
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          showNotification('Error marking as delivered. Please try again.', 'error');
-          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Mark as Delivered'; }
-        });
-      } catch (e) {
-        console.error('markAsDelivered error', e);
-      }
+        const btn = modal.querySelector('.close-btn');
+        if (btn) btn.focus();
+      }, 0);
     }
 
-    function markItemClaimed(btn, orderId) {
-      console.log('Marking item claimed:', orderId);
-      try {
-        if (btn) {
-          btn.disabled = true;
-          btn.dataset.origText = btn.textContent;
-          btn.textContent = 'Marking...';
-        } else {
-          btn = document.querySelector(`#orderCard-${orderId} .btn-accept`);
-          if (btn) { btn.disabled = true; btn.dataset.origText = btn.textContent; btn.textContent = 'Marking...'; }
-        }
+    function closeAvailabilityModal() {
+      const modal = document.getElementById('riderAvailabilityModal');
+      if (modal) modal.style.display = 'none';
+    }
 
-        if (!confirm('Are you sure you want to mark this item as claimed?')) {
-          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Item Claimed'; }
-          return;
-        }
+    function retryAvailability() {
+      closeAvailabilityModal();
+      openAvailabilityCheck();
+    }
 
-        const requestData = {
-          action: 'updateDeliveryStatus',
-          order_id: orderId,
-          status: 'item_claimed'
-        };
-
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(requestData)
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.success) {
-            showNotification('Item marked as claimed!');
-            
-            // Store claimed orders in localStorage to maintain state between refreshes
-            let claimedOrders = [];
-            try {
-              claimedOrders = JSON.parse(localStorage.getItem('claimedOrders') || '[]');
-            } catch (e) {
-              console.warn('Error parsing claimed orders', e);
-              claimedOrders = [];
-            }
-            
-            if (!claimedOrders.includes(orderId)) {
-              claimedOrders.push(orderId);
-              localStorage.setItem('claimedOrders', JSON.stringify(claimedOrders));
-            }
-            
-            // Refresh immediately to show the "Mark as Delivered" button
-            loadDashboard();
-          } else {
-            showNotification('Error marking item as claimed: ' + data.message, 'error');
-            if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Item Claimed'; }
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          showNotification('Error marking item as claimed. Please try again.', 'error');
-          if (btn) { btn.disabled = false; btn.textContent = btn.dataset.origText || 'Item Claimed'; }
-        });
-      } catch (e) {
-        console.error('markItemClaimed error', e);
-        showNotification('Error in markItemClaimed function', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = 'Item Claimed'; }
-      }
-    }
-    
-    function viewOrderDetails(orderId) {
-      const order = allOrders.find(o => o.order_id === orderId);
-      if (!order) return;
-      
-      const details = order.booking_details;
-      // Get payment method from either possible field
-      const paymentMethod = order.payment_method || order.paymentMethod;
-      
-      let detailsText = `Order ID: ${order.order_id}\n`;
-      detailsText += `Type: ${order.booking_type}\n`;
-      detailsText += `Customer: ${order.customer_name}\n`;
-      detailsText += `Phone: ${order.customer_phone}\n`;
-      detailsText += `Status: ${order.status}\n`;
-      detailsText += `Payment: ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
-        ` (₱${order.payment_amount} - ${paymentMethod || 'Cash'})` : ''}\n`;
-      
-      // Remove the old format since we now include this in the payment status line
-      // if (order.payment_status === 'Not Yet Paid') {
-      //   detailsText += `Amount to Collect: ₱${order.payment_amount}${paymentMethod ? ' via ' + paymentMethod : ''}\n`;
-      // }
-      
-      // Type-specific details
-      if (order.booking_type === 'parcel') {
-        if (typeof details.quantity !== 'undefined') {
-          detailsText += `Quantity: ${details.quantity} package(s)\n`;
-        }
-        if ( details.pickupPerson) {
-          detailsText += `Pickup from: ${details.pickupPerson}\n`;
-        }
-      }
-      
-      if (details.pickupLocation) {
-        detailsText += `Pickup: ${details.pickupLocation}\n`;
-      }
-      
-      if (order.booking_type === 'laundry' && details.basketName) {
-        detailsText += `Basket: ${details.basketName}\n`;
-      }
-      
-      if (details.deliveryLocation) {
-        detailsText += `Delivery: ${details.deliveryLocation}\n`;
-      }
-      
-      if (details.notes) {
-        detailsText += `Notes: ${details.notes}\n`;
-      }
-      
-      alert(detailsText);
-    }
-    
-    function refreshDashboard() {
-      showNotification('Refreshing dashboard...');
-      loadDashboard();
-    }
-    
-    function startAutoRefresh() {
-      // Refresh every 4 seconds to sync faster with bookings
-      if (refreshInterval) clearInterval(refreshInterval);
-      if (isTypingMessage) return; // don't refresh while typing
-      
-      refreshInterval = setInterval(() => {
-        try {
-          if (!isTypingMessage) {
-            // Load dashboard data
-            loadDashboard();
-            
-            // Only check for notifications if service is defined
-           
-            if (typeof RiderNotificationService !== 'undefined') {
-              // Check for new bookings and show notifications
-              RiderNotificationService.pollRiderNotifications(SCRIPT_URL, lastNotificationCheck)
-                .then(newBookings => {
-                  if (newBookings.length > 0) {
-                    RiderNotificationService.showRiderNotifications(newBookings);
-                    // Play notification sound when new bookings are detected
-                    playNotificationSound();
-                  }
-                  // Update last notification check time
-                  lastNotificationCheck = Date.now();
-                })
-                .catch(error => {
-                  console.error('Error checking for notifications:', error);
-                });
-            }
-          }
-        } catch (e) {
-          console.error('Error in auto-refresh interval:', e);
-        }
-      }, 4000); // Poll every 4 seconds
-    }
-    
-    // Add function to play notification sound
-    function playNotificationSound() {
-      try {
-        const sound = document.getElementById('notificationSound');
-        if (sound) {
-          // Reset the audio to the beginning if it was already playing
-          sound.pause();
-          sound.currentTime = 0;
+    // Open availability check first; only show instructions if riders available
+    function openAvailabilityCheck() {
+      // Show a subtle message while checking
+      showAvailabilityModal('Checking rider availability...', 'Please wait.');
+      checkRidersActive().then(result => {
+        closeAvailabilityModal();
+        
+        if (result.ok && result.anyActive) {
+          bookingAllowed = true;
           
-          // Play the sound
-          sound.play().catch(err => {
-            console.warn('Could not play notification sound:', err);
-            // Some browsers require user interaction before playing audio
-          });
+          // Show admin message if using fallback or bypass
+          if ((result.fallback || result.adminBypass) && isAdmin) {
+            showAvailabilityModal(
+              'Admin mode: Booking enabled despite rider status issues', 
+              result.fallback ? 'Using fallback mode: riders exist but none marked active' : 
+                              'Admin bypass: Error checking rider status'
+            );
+            setTimeout(closeAvailabilityModal, 3000);
+          }
+          
+          openInstructions(); // show instructions as usual
+        } else if (result.ok && !result.anyActive && result.riderCount > 0) {
+          // Riders exist but none are active - don't show rider count
+          bookingAllowed = false;
+          showAvailabilityModal(
+            'No available rider at the moment.', 
+            'Please try again later.'
+          );
+        } else if (result.ok && !result.anyActive) {
+          // No riders at all
+          bookingAllowed = false;
+          showAvailabilityModal('No available rider at the moment. Please try again later.');
+        } else {
+          // Connection error
+          bookingAllowed = false;
+          showAvailabilityModal(
+            'Could not verify rider availability.', 
+            'Please check your internet connection and try again.'
+          );
         }
-      } catch (error) {
-        console.error('Error playing notification sound:', error);
-      }
-    }
-    
-    function showNotification(message, type = 'success') {
-      const notification = document.getElementById('notification');
-      notification.textContent = message;
-      notification.className = `notification ${type} show`;
-      
-      setTimeout(() => {
-        notification.classList.remove('show');
-      }, 3000);
-    }
-    
-    function togglePickupStatus(orderId) {
-      const checkbox = document.getElementById(`pickup-${orderId}`);
-      if (checkbox.checked) {
-        // Add to picked up orders and save to localStorage
-        pickedUpOrders.add(orderId);
-        localStorage.setItem('pickedUpOrders', JSON.stringify([...pickedUpOrders]));
-        console.log(`Order ${orderId} marked as picked up`);
-      } else {
-        // Remove from picked up orders and save to localStorage
-        pickedUpOrders.delete(orderId);
-        localStorage.setItem('pickedUpOrders', JSON.stringify([...pickedUpOrders]));
-        console.log(`Order ${orderId} pickup status removed`);
-      }
-    }
-    
-    function switchTab(tabName, event) {
-      // Hide all tab content
-      const tabContents = document.querySelectorAll('.tab-content');
-      tabContents.forEach(content => {
-        content.classList.remove('active');
       });
-      
-      // Remove active class from all buttons
-      const tabButtons = document.querySelectorAll('.tab-button');
-      tabButtons.forEach(button => {
-        button.classList.remove('active');
-      });
-      
-      // Show the selected tab content
-      document.getElementById(tabName + 'Tab').classList.add('active');
-      
-      // Add active class to the clicked button
-      if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
+    }
+
+    function navigateToBooking(service) {
+      // Block booking when no riders are active
+      if (!bookingAllowed) {
+        showAvailabilityModal('No available rider at the moment. Please try again later.');
+        return;
       }
+      // Add a smooth transition effect
+      const card = event.currentTarget;
+      card.style.transform = 'scale(0.95)';
+      card.style.transition = 'transform 0.2s ease';
+      setTimeout(() => { window.location.href = `${service}.html`; }, 200);
     }
     
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-      if (refreshInterval) {
-        clearInterval(refreshInterval);
-      }
+    // Keep existing interactivity
+    document.addEventListener('DOMContentLoaded', function() {
+      const cards = document.querySelectorAll('.option-card');
+      
+      cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-10px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0) scale(1)';
+        });
+      });
     });
     
-    function checkNotificationPermission() {
-      if (!('Notification' in window)) {
-        console.warn('This browser does not support notifications.');
+    // Keyboard navigation should also respect the booking gate
+    document.addEventListener('keydown', function(e) {
+      if (!bookingAllowed) {
+        if (e.key === '1' || e.key === '2' || e.key === '3') showAvailabilityModal('No available rider at the moment. Please try again later.');
         return;
       }
+      if (e.key === '1') navigateToBooking('parcel');
+      if (e.key === '2') navigateToBooking('food');
+      if (e.key === '3') navigateToBooking('laundry');
+    });
+  </script>
 
-      if (Notification.permission === 'default') {
-        alert('Please enable notifications to stay updated with your orders.');
-        Notification.requestPermission().then(permission => {
-          if (permission === 'granted') {
-            console.log('Notifications enabled.');
-          } else {
-            console.warn('Notifications not enabled.');
-          }
-        });
-      }
-    }
-
-    // Setup toggle initial state and sync to backend
-    function initActiveToggle() {
+  <!-- New: show/hide logic for Instructions modal (always show on open) -->
+  <script>
+    function openInstructions() {
       try {
-        const saved = localStorage.getItem('riderActive');
-        myActive = saved === '1' || saved === 'true';
-        const sw = document.getElementById('activeSwitch');
-        if (sw) sw.checked = myActive;
-        updateActiveLabel();
-
-        // Push current state to backend on load (idempotent)
-        saveRiderStatus().catch(() => {});
+        const modal = document.getElementById('instructionsModal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        setTimeout(() => { const btn = modal.querySelector('.close-btn'); if (btn) btn.focus(); }, 0);
+        const keyHandler = (e) => { if (e.key === 'Enter' || e.key === 'Escape') { closeInstructions(); } };
+        modal.dataset.bound = '1';
+        document.addEventListener('keydown', keyHandler, { once: true });
       } catch (_) {}
     }
 
-    function updateActiveLabel() {
-      const lbl = document.getElementById('activeLabel');
-      if (lbl) {
-        lbl.textContent = myActive ? 'Active' : 'Inactive';
-        lbl.style.color = myActive ? '#d1fae5' : '#fef3c7';
-      }
+    function closeInstructions() {
+      const modal = document.getElementById('instructionsModal');
+      if (modal) modal.style.display = 'none';
     }
 
-    function onActiveToggle(checked) {
-      myActive = !!checked;
-      localStorage.setItem('riderActive', myActive ? '1' : '0');
-      updateActiveLabel();
-      saveRiderStatus()
-        .then(() => showNotification(`You are now ${myActive ? 'Active' : 'Inactive'}`))
-        .catch(() => showNotification('Failed to update status', 'error'));
-    }
-
-    // Persist current rider's status to backend
-    function saveRiderStatus() {
-      const riderName = localStorage.getItem('riderName') || '';
-      const riderPhone = localStorage.getItem('riderPhone') || '';
-      const payload = {
-        action: 'set_rider_status',
-        rider_id: riderSessionId,
-        rider_name: riderName,
-        rider_phone: riderPhone,
-        active: myActive ? '1' : '0'
-      };
-      return fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      }).then(r => r.json()).then(_ => _);
-    }
-
-    // Fetch all rider statuses
-    function loadRiderStatuses() {
-      const url = `${SCRIPT_URL}?action=get_rider_statuses&ts=${Date.now()}`;
-      return fetch(url)
-        .then(r => r.json())
-        .then(data => {
-          if (data && data.success && data.riders) {
-            riderStatuses = data.riders; // map: rider_id -> {active, name, phone, last_updated}
-          }
-        })
-        .catch(err => console.warn('loadRiderStatuses error', err));
-    }
-
-    // New: Show active riders' names (excludes current rider)
-    function showActiveRiders() {
-      // Always refresh statuses before showing
-      loadRiderStatuses()
-        .then(() => {
-          try {
-            const names = Array.from(new Set(
-              Object.entries(riderStatuses)
-                .filter(([rid, info]) => info && info.active && rid !== riderSessionId)
-                .map(([, info]) => (info.name || '').trim())
-                .filter(n => n.length > 0)
-            ));
-            if (names.length === 0) {
-              alert('No one is active');
-            } else {
-              alert('Active riders:\n- ' + names.join('\n- '));
-            }
-          } catch (e) {
-            console.warn('showActiveRiders error', e);
-            alert('No one is active');
-          }
-        })
-        .catch(() => {
-          alert('No one is active');
-        });
-    }
-    
-    // Reminder helper
-    function remindActivate() {
-      showNotification('Please switch to Active before accepting bookings.', 'error');
-      try {
-        const sw = document.getElementById('activeSwitch');
-        if (sw) sw.focus();
-      } catch (_) {}
-    }
-
-    // Rider info toggle helpers
-    function initializeRiderInfoToggle() {
-      try {
-        const saved = localStorage.getItem('riderInfoVisible');
-        const visible = (saved === null) ? true : (saved === '1' || saved === 'true');
-        setRiderInfoVisibility(visible);
-      } catch (_) {
-        setRiderInfoVisibility(true);
-      }
-    }
-    function toggleRiderInfo() {
-      const panel = document.querySelector('.rider-info');
-      const isHidden = panel && panel.classList.contains('hidden');
-      setRiderInfoVisibility(isHidden);
-    }
-    function setRiderInfoVisibility(show) {
-      const panel = document.querySelector('.rider-info');
-      const btn = document.getElementById('riderInfoToggle');
-      if (panel) panel.classList.toggle('hidden', !show);
-      if (btn) {
-        btn.textContent = show ? 'Hide rider info' : 'Show rider info';
-        btn.setAttribute('aria-expanded', String(show));
-      }
-      try { localStorage.setItem('riderInfoVisible', show ? '1' : '0'); } catch (_) {}
+    // IMPORTANT: Run availability check first; only then possibly show instructions
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', openAvailabilityCheck);
+    } else {
+      openAvailabilityCheck();
     }
   </script>
   <script src="info-modal.js"></script>
 </body>
 </html>
+
+
