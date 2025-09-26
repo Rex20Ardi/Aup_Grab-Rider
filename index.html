@@ -1163,11 +1163,39 @@
       loadAllOrders();
     }
     
+    // Debug helper for inspecting API responses
+    function debugApiResponse(apiName, data) {
+      console.group(`API Response: ${apiName}`);
+      try {
+        console.log(`Success: ${data.success}`);
+        console.log(`Message: ${data.message || 'No message'}`);
+        
+        if (data.bookings) {
+          console.log(`Bookings: ${data.bookings.length}`);
+          if (data.bookings.length > 0) {
+            console.log('Sample booking:', data.bookings[0]);
+          }
+        }
+        
+        // Log any warnings from the backend
+        if (data.warnings) {
+          console.warn(`Warnings: ${data.warnings.length}`);
+          data.warnings.forEach((w, i) => console.warn(`Warning ${i+1}:`, w));
+        }
+      } catch (e) {
+        console.error('Error debugging API response:', e);
+      }
+      console.groupEnd();
+    }
+
     function loadAllOrders() {
       const ts = Date.now();
       fetch(`${SCRIPT_URL}?action=get_all_bookings&ts=${ts}`)
         .then(response => response.json())
         .then(data => {
+          // Debug the API response
+          debugApiResponse('get_all_bookings', data);
+          
           if (data.success) {
             // Check for new orders before updating allOrders
             const newOrders = checkForNewOrders(data.bookings);
@@ -1527,9 +1555,17 @@
                 <span class="detail-label">Payment:</span>
                 <span class="detail-value">
                   ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
-                    ` (₱${order.payment_amount} - ${paymentMethod || 'Cash'})` : ''}
+                    ` (₱${order.payment_amount})` : ''}
                 </span>
               </div>
+              
+              <div class="detail-row">
+                <span class="detail-label">Payment Method:</span>
+                <span class="detail-value">
+                  ${paymentMethod || 'Cash'}
+                </span>
+              </div>
+              
               <div class="detail-row">
                 <span class="detail-label">${timeLabel}:</span>
                 <span class="detail-value">${createdDate}</span>
@@ -1975,7 +2011,8 @@
       detailsText += `Phone: ${order.customer_phone}\n`;
       detailsText += `Status: ${order.status}\n`;
       detailsText += `Payment: ${order.payment_status}${order.payment_status === 'Not Yet Paid' ? 
-        ` (₱${order.payment_amount} - ${paymentMethod || 'Cash'})` : ''}\n`;
+        ` (₱${order.payment_amount})` : ''}\n`;
+      detailsText += `Payment Method: ${paymentMethod || 'Cash'}\n`;
       
       // Remove the old format since we now include this in the payment status line
       // if (order.payment_status === 'Not Yet Paid') {
